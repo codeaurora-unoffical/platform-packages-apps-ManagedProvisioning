@@ -78,7 +78,8 @@ public class EncryptDeviceActivity extends Activity {
                 ServiceManager.getService("mount"));
 
         try {
-            return (mountService.getEncryptionState() == IMountService.ENCRYPTION_STATE_OK);
+            int state = mountService.getEncryptionState();
+            return (state == IMountService.ENCRYPTION_STATE_OK || state == IMountService.ENCRYPTION_STATE_OK_MDTP_ACTIVATED);
         } catch (RemoteException e) {
             return false;
         }
