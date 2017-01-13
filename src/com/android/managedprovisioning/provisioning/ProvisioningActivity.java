@@ -21,13 +21,16 @@ import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVIS
 import android.app.Activity;
 import android.app.DialogFragment;
 import android.os.Bundle;
+import android.support.annotation.VisibleForTesting;
 import android.view.accessibility.AccessibilityEvent;
 import android.widget.TextView;
 
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.DialogBuilder;
-import com.android.managedprovisioning.common.SetupLayoutActivity;
+import com.android.managedprovisioning.common.ProvisionLogger;
+import com.android.managedprovisioning.common.SetupGlifLayoutActivity;
 import com.android.managedprovisioning.common.SimpleDialog;
+import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
 /**
@@ -37,7 +40,7 @@ import com.android.managedprovisioning.model.ProvisioningParams;
  * {@link ProvisioningManager}. It shows progress updates as provisioning progresses and handles
  * showing of cancel and error dialogs.</p>
  */
-public class ProvisioningActivity extends SetupLayoutActivity
+public class ProvisioningActivity extends SetupGlifLayoutActivity
         implements SimpleDialog.SimpleDialogListener, ProvisioningManagerCallback {
 
     private static final String KEY_PROVISIONING_STARTED = "ProvisioningStarted";
@@ -49,9 +52,25 @@ public class ProvisioningActivity extends SetupLayoutActivity
 
     private TextView mProgressTextView;
     private ProvisioningParams mParams;
+    private ProvisioningManager mProvisioningManager;
 
-    protected ProvisioningManager getProvisioningManager() {
-        return ProvisioningManager.getInstance(this);
+    public ProvisioningActivity() {
+        this(null, new Utils());
+    }
+
+    @VisibleForTesting
+    public ProvisioningActivity(ProvisioningManager provisioningManager, Utils utils) {
+        super(utils);
+        mProvisioningManager = provisioningManager;
+    }
+
+    // Lazily initialize ProvisioningManager, since we can't call in ProvisioningManager.getInstance
+    // in constructor as base context is not available in constructor
+    private ProvisioningManager getProvisioningManager() {
+        if (mProvisioningManager == null) {
+            mProvisioningManager = ProvisioningManager.getInstance(this);
+        }
+        return mProvisioningManager;
     }
 
     @Override
@@ -96,11 +115,17 @@ public class ProvisioningActivity extends SetupLayoutActivity
 
     @Override
     public void onBackPressed() {
+        // if EXTRA_PROVISIONING_SKIP_USER_CONSENT is specified, don't allow user to cancel
+        if (mParams.skipUserConsent) {
+            return;
+        }
+
         showCancelProvisioningDialog();
     }
 
     @Override
     public void preFinalizationCompleted() {
+        ProvisionLogger.logi("ProvisioningActivity pre-finalization completed");
         setResult(Activity.RESULT_OK);
         finish();
     }
@@ -210,6 +235,8 @@ public class ProvisioningActivity extends SetupLayoutActivity
 
         initializeLayoutParams(R.layout.progress, headerResId, true);
         setTitle(titleResId);
-        maybeSetLogoAndMainColor(params.mainColor);
+
+        setMainColor(getColor(R.color.blue));
+        setStatusBarIconColor(false);
     }
 }

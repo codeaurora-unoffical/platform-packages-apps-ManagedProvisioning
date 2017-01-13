@@ -131,7 +131,6 @@ public class ProvisioningManager implements ProvisioningControllerCallback {
         mLastProgressMsgId = 0;
 
         mController = mFactory.createProvisioningController(mContext, params, this);
-        mController.initialize();
         mController.start(mHandlerThread.getLooper());
     }
 
@@ -238,7 +237,9 @@ public class ProvisioningManager implements ProvisioningControllerCallback {
                 mUiHandler.post(() -> callback.preFinalizationCompleted());
             }
             mLastCallback = CALLBACK_PRE_FINALIZED;
+            mProvisioningAnalyticsTracker.logProvisioningSessionCompleted(mContext);
             clearControllerLocked();
+            ProvisionLogger.logi("ProvisioningManager pre-finalization completed");
         }
     }
 

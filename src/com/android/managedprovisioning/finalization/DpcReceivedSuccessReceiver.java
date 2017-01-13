@@ -25,6 +25,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.UserHandle;
 import android.support.annotation.Nullable;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -41,16 +42,22 @@ public class DpcReceivedSuccessReceiver extends BroadcastReceiver {
 
     private final Account mMigratedAccount;
     private final String mMdmPackageName;
+    private final boolean mKeepAccountMigrated;
     private final Utils mUtils;
+    private final UserHandle mManagedUserHandle;
 
-    public DpcReceivedSuccessReceiver(@Nullable Account migratedAccount, String mdmPackageName) {
-        this(migratedAccount, mdmPackageName, new Utils());
+    public DpcReceivedSuccessReceiver(@Nullable Account migratedAccount,
+            boolean keepAccountMigrated, UserHandle managedUserHandle, String mdmPackageName) {
+        this(migratedAccount, keepAccountMigrated, managedUserHandle, mdmPackageName, new Utils());
     }
 
     @VisibleForTesting
-    DpcReceivedSuccessReceiver(Account migratedAccount, String mdmPackageName, Utils utils) {
+    DpcReceivedSuccessReceiver(Account migratedAccount, boolean keepAccountMigrated,
+        UserHandle managedUserHandle, String mdmPackageName, Utils utils) {
         mMigratedAccount = migratedAccount;
+        mKeepAccountMigrated = keepAccountMigrated;
         mMdmPackageName = checkNotNull(mdmPackageName);
+        mManagedUserHandle = checkNotNull(managedUserHandle);
         mUtils = checkNotNull(utils);
     }
 
@@ -62,6 +69,7 @@ public class DpcReceivedSuccessReceiver extends BroadcastReceiver {
         primaryProfileSuccessIntent.setPackage(mMdmPackageName);
         primaryProfileSuccessIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES |
                 Intent.FLAG_RECEIVER_FOREGROUND);
+        primaryProfileSuccessIntent.putExtra(Intent.EXTRA_USER, mManagedUserHandle);
 
         // Now cleanup the primary profile if necessary
         if (mMigratedAccount != null) {
@@ -79,7 +87,9 @@ public class DpcReceivedSuccessReceiver extends BroadcastReceiver {
         new AsyncTask<Void, Void, Void>() {
             @Override
             protected Void doInBackground(Void... params) {
-                mUtils.removeAccount(context, mMigratedAccount);
+                if (!mKeepAccountMigrated) {
+                    mUtils.removeAccount(context, mMigratedAccount);
+                }
                 context.sendBroadcast(primaryProfileSuccessIntent);
                 return null;
             }

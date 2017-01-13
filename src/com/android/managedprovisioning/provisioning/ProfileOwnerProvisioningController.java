@@ -74,7 +74,8 @@ public class ProfileOwnerProvisioningController extends AbstractProvisioningCont
     private void setUpTasksManagedProfile() {
         addTasks(
                 new CreateManagedProfileTask(mContext, mParams, this),
-                new InstallExistingPackageTask(mContext, mParams, this),
+                new InstallExistingPackageTask(mParams.inferDeviceAdminPackageName(), mContext,
+                        mParams, this),
                 new SetDevicePolicyTask(mContext, mParams, this),
                 new DisableBluetoothSharingTask(mContext, mParams, this),
                 new ManagedProfileSettingsTask(mContext, mParams, this),
@@ -86,12 +87,13 @@ public class ProfileOwnerProvisioningController extends AbstractProvisioningCont
     private void setUpTasksManagedUser() {
         addTasks(
                 new DeleteNonRequiredAppsTask(true /* new profile */, mContext, mParams, this),
-                new InstallExistingPackageTask(mContext, mParams, this),
+                new InstallExistingPackageTask(mParams.inferDeviceAdminPackageName(), mContext,
+                        mParams, this),
                 new SetDevicePolicyTask(mContext, mParams, this));
     }
 
     @Override
-    public void onSuccess(AbstractProvisioningTask task) {
+    public synchronized void onSuccess(AbstractProvisioningTask task) {
         if (task instanceof CreateManagedProfileTask) {
             // If the task was creating a managed profile, store the profile id
             mUserId = ((CreateManagedProfileTask) task).getProfileUserId();

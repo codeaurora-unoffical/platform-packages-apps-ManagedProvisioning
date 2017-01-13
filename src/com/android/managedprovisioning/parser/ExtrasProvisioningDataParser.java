@@ -30,12 +30,15 @@ import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_AD
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_DISCLAIMERS;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_LOCALE;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_LOCAL_TIME;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_LOGO_URI;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_MAIN_COLOR;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SKIP_ENCRYPTION;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SKIP_USER_CONSENT;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SKIP_USER_SETUP;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_TIME_ZONE;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_WIFI_HIDDEN;
@@ -48,8 +51,9 @@ import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_WIFI_SECU
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_WIFI_SSID;
 import static com.android.internal.util.Preconditions.checkNotNull;
 import static com.android.managedprovisioning.common.Globals.ACTION_RESUME_PROVISIONING;
+import static com.android.managedprovisioning.model.ProvisioningParams.inferStaticDeviceAdminPackageName;
 
-import android.accounts.Account;
+import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -58,16 +62,16 @@ import android.os.Bundle;
 import android.os.PersistableBundle;
 import android.support.annotation.Nullable;
 import android.support.annotation.VisibleForTesting;
-
-import com.android.managedprovisioning.common.LogoUtils;
-import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.IllegalProvisioningArgumentException;
+import com.android.managedprovisioning.common.LogoUtils;
+import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
+import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.StoreUtils;
 import com.android.managedprovisioning.common.Utils;
+import com.android.managedprovisioning.model.DisclaimersParam;
 import com.android.managedprovisioning.model.PackageDownloadInfo;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.model.WifiInfo;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -90,13 +94,23 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
                     ACTION_PROVISION_MANAGED_PROFILE));
 
     private final Utils mUtils;
+    private final Context mContext;
+    private final ManagedProvisioningSharedPreferences mSharedPreferences;
 
-    ExtrasProvisioningDataParser(Utils utils) {
+    ExtrasProvisioningDataParser(Context context, Utils utils) {
+        this(context, utils, new ManagedProvisioningSharedPreferences(context));
+    }
+
+    @VisibleForTesting
+    ExtrasProvisioningDataParser(Context context, Utils utils,
+            ManagedProvisioningSharedPreferences sharedPreferences) {
+        mContext = checkNotNull(context);
         mUtils = checkNotNull(utils);
+        mSharedPreferences = checkNotNull(sharedPreferences);
     }
 
     @Override
-    public ProvisioningParams parse(Intent provisioningIntent, Context context)
+    public ProvisioningParams parse(Intent provisioningIntent)
             throws IllegalProvisioningArgumentException{
         String provisioningAction = provisioningIntent.getAction();
         if (ACTION_RESUME_PROVISIONING.equals(provisioningAction)) {
@@ -105,11 +119,11 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
         }
         if (PROVISIONING_ACTIONS_SUPPORT_MIN_PROVISIONING_DATA.contains(provisioningAction)) {
             ProvisionLogger.logi("Processing mininalist extras intent.");
-            return parseMinimalistSupportedProvisioningDataInternal(provisioningIntent, context)
+            return parseMinimalistSupportedProvisioningDataInternal(provisioningIntent, mContext)
                     .build();
         } else if (PROVISIONING_ACTIONS_SUPPORT_ALL_PROVISIONING_DATA.contains(
                 provisioningAction)) {
-            return parseAllSupportedProvisioningData(provisioningIntent, context);
+            return parseAllSupportedProvisioningData(provisioningIntent, mContext);
         } else {
             throw new IllegalProvisioningArgumentException("Unsupported provisioning action: "
                     + provisioningAction);
@@ -136,14 +150,17 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
      *     <li>{@link EXTRA_PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED}</li>
      *     <li>{@link EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE}</li>
      *     <li>{@link EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE}</li>
+     *     <li>{@link EXTRA_PROVISIONING_SKIP_USER_CONSENT}</li>
      * </ul>
      */
     private ProvisioningParams.Builder parseMinimalistSupportedProvisioningDataInternal(
             Intent intent, Context context)
             throws IllegalProvisioningArgumentException {
+        final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
         boolean isProvisionManagedDeviceFromTrustedSourceIntent =
                 ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE.equals(intent.getAction());
         try {
+            final long provisioningId = mSharedPreferences.incrementAndGetProvisioningId();
             String provisioningAction = mUtils.mapIntentToDpmAction(intent);
 
             // Parse device admin package name and component name.
@@ -179,6 +196,21 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
                         ProvisioningParams.DEFAULT_SKIP_USER_SETUP);
             }
 
+            // Only current DeviceOwner can specify EXTRA_PROVISIONING_SKIP_USER_CONSENT when
+            // provisioning PO with ACTION_PROVISION_MANAGED_PROFILE
+            final boolean skipUserConsent =
+                    ACTION_PROVISION_MANAGED_PROFILE.equals(provisioningAction)
+                            && intent.getBooleanExtra(EXTRA_PROVISIONING_SKIP_USER_CONSENT,
+                                    ProvisioningParams.DEFAULT_EXTRA_PROVISIONING_SKIP_USER_CONSENT)
+                            && mUtils.isPackageDeviceOwner(dpm, inferStaticDeviceAdminPackageName(
+                                    deviceAdminComponentName, deviceAdminPackageName));
+
+            // Only when provisioning PO with ACTION_PROVISION_MANAGED_PROFILE
+            final boolean keepAccountMigrated =
+                    ACTION_PROVISION_MANAGED_PROFILE.equals(provisioningAction)
+                            && intent.getBooleanExtra(EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION,
+                            ProvisioningParams.DEFAULT_EXTRA_PROVISIONING_KEEP_ACCOUNT_MIGRATED);
+
             // Parse main color and organization's logo. This is not supported in managed device
             // from trusted source provisioning because, currently, there is no way to send
             // organization logo to the device at this stage.
@@ -190,7 +222,11 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
                 parseOrganizationLogoUrlFromExtras(context, intent);
             }
 
+            DisclaimersParam disclaimersParam = new DisclaimersParser(context, provisioningId)
+                    .parse(intent.getParcelableArrayExtra(EXTRA_PROVISIONING_DISCLAIMERS));
+
             return ProvisioningParams.Builder.builder()
+                    .setProvisioningId(provisioningId)
                     .setProvisioningAction(provisioningAction)
                     .setDeviceAdminComponentName(deviceAdminComponentName)
                     .setDeviceAdminPackageName(deviceAdminPackageName)
@@ -202,13 +238,14 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
                     .setAdminExtrasBundle((PersistableBundle) intent.getParcelableExtra(
                             EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE))
                     .setMainColor(mainColor)
+                    .setDisclaimersParam(disclaimersParam)
+                    .setSkipUserConsent(skipUserConsent)
+                    .setKeepAccountMigrated(keepAccountMigrated)
                     .setSkipUserSetup(skipUserSetup)
-                    .setAccountToMigrate((Account) intent.getParcelableExtra(
+                    .setAccountToMigrate(intent.getParcelableExtra(
                             EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE));
         } catch (ClassCastException e) {
-            throw new IllegalProvisioningArgumentException("Extra "
-                    + EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE
-                    + " must be of type PersistableBundle.", e);
+            throw new IllegalProvisioningArgumentException("Extra has invalid type", e);
         } catch (IllegalArgumentException e) {
             throw new IllegalProvisioningArgumentException("Invalid parameter found!", e);
         } catch (NullPointerException e) {

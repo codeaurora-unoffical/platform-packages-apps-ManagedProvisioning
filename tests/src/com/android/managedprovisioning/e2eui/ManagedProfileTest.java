@@ -27,7 +27,6 @@ import android.util.Log;
 import android.view.View;
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.TestInstrumentationRunner;
-import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.preprovisioning.PreProvisioningActivity;
 import org.hamcrest.Matcher;
 
@@ -50,13 +49,13 @@ public class ManagedProfileTest extends AndroidTestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        TestInstrumentationRunner.registerReplacedActivity(PreProvisioningActivity.class,
-                TestPreProvisioningActivity.class);
         mActivityRule = new ActivityTestRule<>(
                 PreProvisioningActivity.class,
                 true /* initialTouchMode */,
                 false);  // launchActivity. False to set intent per method
         mResultListener = new ProvisioningResultListener(getContext());
+        TestInstrumentationRunner.registerReplacedActivity(PreProvisioningActivity.class,
+                (cl, className, intent) -> new TestPreProvisioningActivity(mResultListener));
     }
 
     @Override
@@ -82,10 +81,6 @@ public class ManagedProfileTest extends AndroidTestCase {
     }
 
     public void testManagedProfile() throws Exception {
-        if (new Utils().isEncryptionRequired()) {
-            Log.i(TAG, "skip testManagedProfile, as encryption is required.");
-            return;
-        }
         mActivityRule.launchActivity(ManagedProfileAdminReceiver.INTENT_PROVISION_MANAGED_PROFILE);
 
         mResultListener.register();
@@ -94,11 +89,7 @@ public class ManagedProfileTest extends AndroidTestCase {
         new EspressoClickRetryActions(3) {
             @Override
             public ViewInteraction newViewInteraction1() {
-                return onView(withId(R.id.setup_button));
-            }
-            @Override
-            public ViewInteraction newViewInteraction2() {
-                return onView(withId(R.id.positive_button));
+                return onView(withId(R.id.next_button));
             }
         }.run();
 
@@ -118,7 +109,6 @@ public class ManagedProfileTest extends AndroidTestCase {
         }
 
         public abstract ViewInteraction newViewInteraction1();
-        public abstract ViewInteraction newViewInteraction2();
 
         public void run() {
             i++;
@@ -126,10 +116,6 @@ public class ManagedProfileTest extends AndroidTestCase {
                     .withFailureHandler(this::handleFailure)
                     .perform(scrollTo(), click());
             Log.i(TAG, "newViewInteraction1 succeeds.");
-            newViewInteraction2()
-                    .withFailureHandler(this::handleFailure)
-                    .perform(click());
-            Log.i(TAG, "newViewInteraction2 succeeds.");
         }
 
         private void handleFailure(Throwable e, Matcher<View> matcher) {

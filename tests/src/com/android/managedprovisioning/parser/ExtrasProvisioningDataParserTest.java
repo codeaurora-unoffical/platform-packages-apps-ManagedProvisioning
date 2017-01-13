@@ -32,7 +32,9 @@ import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_DEVICE_AD
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_LOCALE;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_LOCAL_TIME;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_MAIN_COLOR;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SKIP_ENCRYPTION;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SKIP_USER_CONSENT;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_TIME_ZONE;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_WIFI_HIDDEN;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_WIFI_PAC_URL;
@@ -46,8 +48,10 @@ import static android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED;
 import static com.android.managedprovisioning.TestUtils.createTestAdminExtras;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import android.accounts.Account;
+import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -57,6 +61,7 @@ import android.test.suitebuilder.annotation.SmallTest;
 import android.util.Base64;
 import com.android.managedprovisioning.common.Globals;
 import com.android.managedprovisioning.common.IllegalProvisioningArgumentException;
+import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.StoreUtils;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.PackageDownloadInfo;
@@ -73,6 +78,9 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
     private static final ComponentName TEST_COMPONENT_NAME =
             ComponentName.unflattenFromString(
                     "com.afwsamples.testdpc/com.afwsamples.testdpc.DeviceAdminReceiver");
+    private static final ComponentName TEST_COMPONENT_NAME_2 =
+            ComponentName.unflattenFromString(
+                    "com.afwsamples.testdpc2/com.afwsamples.testdpc.DeviceAdminReceiver");
     private static final long TEST_LOCAL_TIME = 1456939524713L;
     private static final Locale TEST_LOCALE = Locale.UK;
     private static final String TEST_TIME_ZONE = "GMT";
@@ -80,9 +88,13 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
     private static final boolean TEST_STARTED_BY_TRUSTED_SOURCE = true;
     private static final boolean TEST_LEAVE_ALL_SYSTEM_APP_ENABLED = true;
     private static final boolean TEST_SKIP_ENCRYPTION = true;
+    private static final boolean TEST_SKIP_USER_CONSENT = true;
+    private static final boolean TEST_KEEP_ACCOUNT_MIGRATED = true;
     private static final boolean TEST_SKIP_USER_SETUP = true;
+    private static final long TEST_PROVISIONING_ID = 1000L;
     private static final Account TEST_ACCOUNT_TO_MIGRATE =
             new Account("user@gmail.com", "com.google");
+    private static final String TEST_SHARED_PREFERENCE = "ExtrasProvisioningDataParserTest";
 
     // Wifi info
     private static final String TEST_SSID = "TestWifi";
@@ -123,6 +135,12 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
     @Mock
     private Context mContext;
 
+    @Mock
+    private DevicePolicyManager mDpm;
+
+    @Mock
+    private ManagedProvisioningSharedPreferences mSharedPreferences;
+
     private ExtrasProvisioningDataParser mExtrasProvisioningDataParser;
 
     private Utils mUtils;
@@ -133,8 +151,13 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
         System.setProperty("dexmaker.dexcache", getContext().getCacheDir().toString());
 
         MockitoAnnotations.initMocks(this);
-
-        mExtrasProvisioningDataParser = new ExtrasProvisioningDataParser(mUtils = spy(new Utils()));
+        when(mContext.getSystemServiceName(DevicePolicyManager.class))
+                .thenReturn(Context.DEVICE_POLICY_SERVICE);
+        when(mContext.getSystemService(Context.DEVICE_POLICY_SERVICE)).thenReturn(mDpm);
+        when(mSharedPreferences.incrementAndGetProvisioningId()).thenReturn(TEST_PROVISIONING_ID);
+        mUtils = spy(new Utils());
+        mExtrasProvisioningDataParser = new ExtrasProvisioningDataParser(mContext, mUtils,
+                mSharedPreferences);
     }
 
     public void testParse_trustedSourceProvisioningIntent() throws Exception {
@@ -148,11 +171,13 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                 .putExtras(getTestDeviceAdminDownloadExtras())
                 .putExtra(EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE, createTestAdminExtras())
                 .putExtra(EXTRA_PROVISIONING_SKIP_ENCRYPTION, TEST_SKIP_ENCRYPTION)
+                .putExtra(EXTRA_PROVISIONING_SKIP_USER_CONSENT, TEST_SKIP_USER_CONSENT)
+                .putExtra(EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION, TEST_KEEP_ACCOUNT_MIGRATED)
                 .putExtra(EXTRA_PROVISIONING_MAIN_COLOR, TEST_MAIN_COLOR)
                 .putExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE, TEST_ACCOUNT_TO_MIGRATE);
 
         // WHEN the intent is parsed by the parser.
-        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
 
         // THEN ProvisionParams is constructed as expected.
         assertEquals(
@@ -162,6 +187,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         .setProvisioningAction(ACTION_PROVISION_MANAGED_DEVICE)
                         .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
                         .setDeviceAdminDownloadInfo(TEST_DOWNLOAD_INFO)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
                         .setLocalTime(TEST_LOCAL_TIME)
                         .setLocale(TEST_LOCALE)
                         .setTimeZone(TEST_TIME_ZONE)
@@ -170,6 +196,10 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         // THEN the trusted source is set to true.
                         .setStartedByTrustedSource(true)
                         .setSkipEncryption(TEST_SKIP_ENCRYPTION)
+                        // THEN skipping user consent flag is ignored
+                        .setSkipUserConsent(false)
+                        // THEN keep account migrated flag is ignored
+                        .setKeepAccountMigrated(false)
                         .setWifiInfo(TEST_WIFI_INFO)
                         .setAdminExtrasBundle(createTestAdminExtras())
                         .setAccountToMigrate(TEST_ACCOUNT_TO_MIGRATE)
@@ -186,7 +216,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
         Intent intent = new Intent(Globals.ACTION_RESUME_PROVISIONING)
                 .putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, expected);
         // WHEN the intent is parsed by the parser
-        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
         // THEN we get back the original ProvisioningParams.
         assertEquals(expected, params);
     }
@@ -203,6 +233,8 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                 .putExtra(EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE, createTestAdminExtras())
                 .putExtra(EXTRA_PROVISIONING_SKIP_ENCRYPTION, TEST_SKIP_ENCRYPTION)
                 .putExtra(EXTRA_PROVISIONING_MAIN_COLOR, TEST_MAIN_COLOR)
+                .putExtra(EXTRA_PROVISIONING_SKIP_USER_CONSENT, TEST_SKIP_USER_CONSENT)
+                .putExtra(EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION, TEST_KEEP_ACCOUNT_MIGRATED)
                 .putExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE, TEST_ACCOUNT_TO_MIGRATE);
 
         // GIVEN the device admin is installed.
@@ -211,7 +243,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                 .findDeviceAdmin(TEST_PACKAGE_NAME, TEST_COMPONENT_NAME, mContext);
 
         // WHEN the intent is parsed by the parser.
-        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
 
         // THEN ProvisionParams is constructed as expected.
         assertEquals(
@@ -219,6 +251,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         // THEN provisioning action is ACTION_PROVISION_MANAGED_PROFILE
                         .setProvisioningAction(ACTION_PROVISION_MANAGED_PROFILE)
                         .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
                         // THEN device admin package name is not supported.
                         .setDeviceAdminPackageName(null)
                         // THEN device admin download info is not supported.
@@ -227,8 +260,92 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         .setWifiInfo(null)
                         .setMainColor(TEST_MAIN_COLOR)
                         .setSkipEncryption(TEST_SKIP_ENCRYPTION)
+                        // THEN skipping user consent flag is ignored
+                        .setSkipUserConsent(false)
+                        .setKeepAccountMigrated(TEST_KEEP_ACCOUNT_MIGRATED)
                         .setAdminExtrasBundle(createTestAdminExtras())
                         .setAccountToMigrate(TEST_ACCOUNT_TO_MIGRATE)
+                        .build(),
+                params);
+    }
+
+    public void testParse_managedProfileIntent_CompProvisioning() throws Exception {
+        // GIVEN a managed profile provisioning intent and other extras.
+        Intent intent = new Intent(ACTION_PROVISION_MANAGED_PROFILE)
+                // GIVEN a device admin package name and component name
+                .putExtra(EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME, TEST_PACKAGE_NAME)
+                .putExtra(EXTRA_PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME, TEST_COMPONENT_NAME)
+                .putExtras(getTestTimeTimeZoneAndLocaleExtras())
+                .putExtras(getTestWifiInfoExtras())
+                .putExtras(getTestDeviceAdminDownloadExtras())
+                .putExtra(EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE, createTestAdminExtras())
+                .putExtra(EXTRA_PROVISIONING_SKIP_ENCRYPTION, TEST_SKIP_ENCRYPTION)
+                .putExtra(EXTRA_PROVISIONING_MAIN_COLOR, TEST_MAIN_COLOR)
+                .putExtra(EXTRA_PROVISIONING_SKIP_USER_CONSENT, TEST_SKIP_USER_CONSENT)
+                .putExtra(EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION, TEST_KEEP_ACCOUNT_MIGRATED)
+                .putExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE, TEST_ACCOUNT_TO_MIGRATE);
+
+        // GIVEN the device admin is installed.
+        doReturn(TEST_COMPONENT_NAME)
+                .when(mUtils)
+                .findDeviceAdmin(TEST_PACKAGE_NAME, TEST_COMPONENT_NAME, mContext);
+
+        // GIVEN the device admin is also device owner in primary user.
+        when(mDpm.getDeviceOwnerComponentOnCallingUser()).thenReturn(TEST_COMPONENT_NAME);
+
+        // WHEN the intent is parsed by the parser.
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
+
+        // THEN ProvisionParams is constructed as expected.
+        assertEquals(
+                ProvisioningParams.Builder.builder()
+                        // THEN provisioning action is ACTION_PROVISION_MANAGED_PROFILE
+                        .setProvisioningAction(ACTION_PROVISION_MANAGED_PROFILE)
+                        .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
+                        // THEN device admin package name is not supported.
+                        .setDeviceAdminPackageName(null)
+                        // THEN device admin download info is not supported.
+                        .setDeviceAdminDownloadInfo(null)
+                        // THEN wifi info is not supported.
+                        .setWifiInfo(null)
+                        .setMainColor(TEST_MAIN_COLOR)
+                        .setSkipEncryption(TEST_SKIP_ENCRYPTION)
+                        .setSkipUserConsent(TEST_SKIP_USER_CONSENT)
+                        .setKeepAccountMigrated(TEST_KEEP_ACCOUNT_MIGRATED)
+                        .setAdminExtrasBundle(createTestAdminExtras())
+                        .setAccountToMigrate(TEST_ACCOUNT_TO_MIGRATE)
+                        .build(),
+                params);
+    }
+
+    public void testParse_managedProfileIntent_DeviceOwnerWithByodProvisioning() throws Exception {
+        // GIVEN a managed profile provisioning intent and other extras.
+        Intent intent = new Intent(ACTION_PROVISION_MANAGED_PROFILE)
+                .putExtra(EXTRA_PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME, TEST_COMPONENT_NAME)
+                .putExtra(EXTRA_PROVISIONING_SKIP_USER_CONSENT, TEST_SKIP_USER_CONSENT)
+                .putExtra(EXTRA_PROVISIONING_KEEP_ACCOUNT_ON_MIGRATION, TEST_KEEP_ACCOUNT_MIGRATED);
+
+        // GIVEN the device admin is installed.
+        doReturn(TEST_COMPONENT_NAME)
+                .when(mUtils)
+                .findDeviceAdmin(null, TEST_COMPONENT_NAME, mContext);
+
+        // GIVEN a different device admin is a device owner in primary user.
+        when(mDpm.getDeviceOwnerComponentOnCallingUser()).thenReturn(TEST_COMPONENT_NAME_2);
+
+        // WHEN the intent is parsed by the parser.
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
+
+        // THEN ProvisionParams is constructed as expected.
+        assertEquals(
+                ProvisioningParams.Builder.builder()
+                        .setProvisioningAction(ACTION_PROVISION_MANAGED_PROFILE)
+                        .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
+                        // THEN skipping user consent flag is ignored
+                        .setSkipUserConsent(false)
+                        .setKeepAccountMigrated(TEST_KEEP_ACCOUNT_MIGRATED)
                         .build(),
                 params);
     }
@@ -248,7 +365,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                 .putExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE, TEST_ACCOUNT_TO_MIGRATE);
 
         // WHEN the intent is parsed by the parser.
-        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
 
         // THEN ProvisionParams is constructed as expected.
         assertEquals(
@@ -256,6 +373,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         // THEN provisioning action is ACTION_PROVISION_MANAGED_USER
                         .setProvisioningAction(ACTION_PROVISION_MANAGED_USER)
                         .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
                         // THEN device admin package name is not supported in Managed User
                         // provisioning.
                         .setDeviceAdminPackageName(null)
@@ -286,7 +404,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                 .putExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE, TEST_ACCOUNT_TO_MIGRATE);
 
         // WHEN the intent is parsed by the parser.
-        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
 
         // THEN ProvisionParams is constructed as expected.
         assertEquals(
@@ -294,6 +412,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         // THEN provisioning action is ACTION_PROVISION_MANAGED_DEVICE
                         .setProvisioningAction(ACTION_PROVISION_MANAGED_DEVICE)
                         .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
                         // THEN device admin package name is not supported in Device Owner
                         // provisioning.
                         .setDeviceAdminPackageName(null)
@@ -325,7 +444,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                 .putExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE, TEST_ACCOUNT_TO_MIGRATE);
 
         // WHEN the intent is parsed by the parser.
-        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+        ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
 
         // THEN ProvisionParams is constructed as expected.
         assertEquals(
@@ -333,6 +452,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
                         // THEN provisioning action is ACTION_PROVISION_MANAGED_SHAREABLE_DEVICE
                         .setProvisioningAction(ACTION_PROVISION_MANAGED_SHAREABLE_DEVICE)
                         .setDeviceAdminComponentName(TEST_COMPONENT_NAME)
+                        .setProvisioningId(TEST_PROVISIONING_ID)
                         // THEN device admin package name is not supported in Device Owner
                         // provisioning.
                         .setDeviceAdminPackageName(null)
@@ -365,7 +485,7 @@ public class ExtrasProvisioningDataParserTest extends AndroidTestCase {
 
         try {
             // WHEN the intent is parsed by the parser.
-            ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent, mContext);
+            ProvisioningParams params = mExtrasProvisioningDataParser.parse(intent);
             fail("ExtrasProvisioningDataParser doesn't support NFC intent. "
                     + "IllegalProvisioningArgumentException should be thrown");
         } catch (IllegalProvisioningArgumentException e) {
