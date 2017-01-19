@@ -517,6 +517,11 @@ public class PreProvisioningControllerTest extends AndroidTestCase {
         verifyNoMoreInteractions(mUi);
     }
 
+    public void testNullParams() throws Exception {
+        // THEN verifying params is null initially
+        assertNull(mController.getParams());
+    }
+
     public void testDeviceOwner_frp() throws Exception {
         // GIVEN device owner provisioning is invoked with FRP active
         prepareMocksForDoIntent(false);
@@ -661,12 +666,12 @@ public class PreProvisioningControllerTest extends AndroidTestCase {
 
     private void verifyInitiateProfileOwnerUi() {
         verify(mUi).initiateUi(R.layout.intro_profile_owner, R.string.setup_profile_start_setup,
-                R.color.gray_status_bar, null, null, true, emptyList());
+                R.color.gray_status_bar, null, null, true, emptyList(), null, null);
     }
 
     private void verifyInitiateDeviceOwnerUi() {
         verify(mUi).initiateUi(eq(R.layout.intro_device_owner),
                 eq(R.string.setup_device_start_setup), eq(R.color.blue), eq(TEST_MDM_PACKAGE_LABEL),
-                any(), eq(false), emptyList());
+                any(), eq(false), eq(emptyList()), eq(null), eq(null));
     }
 }

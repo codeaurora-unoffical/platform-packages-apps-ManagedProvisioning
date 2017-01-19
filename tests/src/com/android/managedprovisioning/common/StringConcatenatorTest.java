@@ -24,6 +24,7 @@ import static java.util.Collections.singletonList;
 
 import android.content.res.Resources;
 import android.support.test.InstrumentationRegistry;
+import android.support.test.filters.SmallTest;
 
 import org.junit.After;
 import org.junit.Before;
@@ -32,6 +33,8 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Locale;
 
+
+@SmallTest
 public class StringConcatenatorTest {
     private StringConcatenator mInstance;
     private LocaleTestUtils mLocaleTestUtils;
@@ -39,7 +42,7 @@ public class StringConcatenatorTest {
     @Before
     public void setUp() throws Exception {
         mLocaleTestUtils = new LocaleTestUtils(InstrumentationRegistry.getTargetContext());
-        mLocaleTestUtils.setLocale(Locale.FRENCH); // non-English locale to ensure i18n works
+        mLocaleTestUtils.setLocale(Locale.US); // sets a stable locale so tests behave consistently
 
         Resources resources = InstrumentationRegistry.getTargetContext().getResources();
         mInstance = new StringConcatenator(resources);
@@ -67,18 +70,18 @@ public class StringConcatenatorTest {
 
     @Test
     public void joinTwo() {
-        assertCorrect(asList("word1", "word2"), "word1 et word2");
+        assertCorrect(asList("word1", "word2"), "word1 and word2");
     }
 
     @Test
     public void joinThree() {
-        assertCorrect(asList("word1", "word2", "word3"), "word1, word2 et word3");
+        assertCorrect(asList("word1", "word2", "word3"), "word1, word2 and word3");
     }
 
     @Test
     public void joinMany() {
         assertCorrect(asList("word1", "word2", "word3", "word4", "word5", "word6", "word7"),
-                "word1, word2, word3, word4, word5, word6 et word7"
+                "word1, word2, word3, word4, word5, word6 and word7"
         );
     }
 

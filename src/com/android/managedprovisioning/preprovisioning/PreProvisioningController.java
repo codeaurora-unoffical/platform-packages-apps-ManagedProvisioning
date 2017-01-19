@@ -36,6 +36,7 @@ import static com.android.managedprovisioning.common.Globals.ACTION_RESUME_PROVI
 import static java.util.Collections.emptyList;
 
 import android.annotation.NonNull;
+import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.KeyguardManager;
 import android.app.admin.DevicePolicyManager;
@@ -44,10 +45,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.UserInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
 import android.os.UserManager;
 import android.service.persistentdata.PersistentDataBlockManager;
+import android.webkit.URLUtil;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.managedprovisioning.R;
@@ -147,14 +152,16 @@ public class PreProvisioningController {
          * @param layoutRes resource id for the layout
          * @param titleRes resource id for the title text
          * @param mainColorRes resource id for the main color
-         * @param packageName package name
+         * @param packageLabel package packageLabel
          * @param packageIcon package icon
          * @param isProfileOwnerProvisioning false for Device Owner provisioning
          * @param termsHeaders list of terms headers
+         * @param orgName organization name
+         * @param supportUrl support url of the organization
          */
-        void initiateUi(int layoutRes, int titleRes, int mainColorRes, String packageName,
+        void initiateUi(int layoutRes, int titleRes, int mainColorRes, String packageLabel,
                 Drawable packageIcon, boolean isProfileOwnerProvisioning,
-                List<String> termsHeaders);
+                List<String> termsHeaders, String orgName, @Nullable String supportUrl);
 
         /**
          * Start provisioning.
@@ -260,22 +267,29 @@ public class PreProvisioningController {
             return;
         }
 
+        String supportUrl = URLUtil.isNetworkUrl(mParams.supportUrl) ? mParams.supportUrl : null;
+
         // show UI so we can get user's consent to continue
         if (isProfileOwnerProvisioning()) {
             mUi.initiateUi(R.layout.intro_profile_owner, R.string.setup_profile_start_setup,
-                    R.color.gray_status_bar, null, null, isProfileOwnerProvisioning(),
-                    getDisclaimerHeaders());
+                    R.color.gray_status_bar, null, null, true /* isProfileOwnerProvisioning */,
+                    getDisclaimerHeaders(), mParams.organizationName, supportUrl);
         } else {
             String packageName = mParams.inferDeviceAdminPackageName();
             MdmPackageInfo packageInfo = MdmPackageInfo.createFromPackageName(mContext,
                     packageName);
+            // Always take packageInfo first for installed app since PackageManager is more reliable
+            String packageLabel = packageInfo != null ? packageInfo.appLabel
+                    : mParams.deviceAdminLabel != null ? mParams.deviceAdminLabel : packageName;
+            Drawable packageIcon = packageInfo != null ? packageInfo.packageIcon
+                    : getDeviceAdminIconDrawable(mParams.deviceAdminIconFilePath);
             mUi.initiateUi(R.layout.intro_device_owner,
                     R.string.setup_device_start_setup,
                     R.color.blue,
-                    packageInfo == null ? packageName : packageInfo.appLabel,
-                    packageInfo == null ? null : packageInfo.packageIcon,
-                    isProfileOwnerProvisioning(),
-                    getDisclaimerHeaders());
+                    packageLabel,
+                    packageIcon,
+                    false /* isProfileOwnerProvisioning */,
+                    getDisclaimerHeaders(), mParams.organizationName, supportUrl);
         }
     }
 
@@ -295,6 +309,18 @@ public class PreProvisioningController {
             result.add(disclaimer.mHeader);
         }
         return result;
+    }
+
+    private Drawable getDeviceAdminIconDrawable(String deviceAdminIconFilePath) {
+        if (deviceAdminIconFilePath == null) {
+            return null;
+        }
+
+        Bitmap bitmap = BitmapFactory.decodeFile(mParams.deviceAdminIconFilePath);
+        if (bitmap == null) {
+            return null;
+        }
+        return new BitmapDrawable(mContext.getResources(), bitmap);
     }
 
     /**
@@ -508,11 +534,8 @@ public class PreProvisioningController {
         return mUtils.isProfileOwnerAction(mParams.provisioningAction);
     }
 
-    @NonNull
+    @Nullable
     public ProvisioningParams getParams() {
-        if (mParams == null) {
-            throw new IllegalStateException("ProvisioningParams are null");
-        }
         return mParams;
     }
 

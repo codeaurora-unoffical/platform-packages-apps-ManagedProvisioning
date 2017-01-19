@@ -36,6 +36,8 @@
     <string name="cancel_setup" msgid="2949928239276274745">"إلغاء"</string>
     <string name="ok_setup" msgid="4593707675416137504">"موافق"</string>
     <string name="user_consent_msg" msgid="8820951802130353584">"أوافق"</string>
+    <!-- no translation found for url_error (5958494012986243186) -->
+    <skip />
     <string name="terms" msgid="8295436105384703903">"البنود"</string>
     <string name="terms_intro" msgid="2626943728063219232">"يحتفظ ملفك الشخصي الجديد للعمل ببيانات عملك بشكل منفصل عن بياناتك الشخصية.\nوتنطبق البنود التالية على الملف الشخصي للعمل."</string>
     <string name="default_managed_profile_name" msgid="5370257687074907055">"الملف الشخصي للعمل"</string>
@@ -94,11 +96,23 @@
     <string name="work_profile_setup_later_message" msgid="2446733709871989895">"يمكنك لاحقًا إعداد ملفك الشخصي للعمل من تطبيق إدارة الجهاز الذي تستخدمه مؤسستك."</string>
     <string name="work_profile_setup_continue" msgid="6549708818974016509">"متابعة"</string>
     <string name="work_profile_setup_stop" msgid="6772128629992514750">"إيقاف"</string>
-    <string name="profile_owner_short_info" msgid="4880192378938092137">"سيتم إنشاء ملف شخصي جديد للعمل. ولن تتمكن مؤسستك إلا من إدارة التطبيقات والبيانات داخله."</string>
-    <!-- no translation found for profile_owner_short_info_with_terms_headers (5579339202378942519) -->
+    <!-- no translation found for profile_owner_info (6693210677067612542) -->
     <skip />
-    <string name="device_owner_short_info" msgid="6788746308703120308">"ستتم إدارة هذا الجهاز بواسطة شركتك. ستتحكم مؤسستك في جهازك وستجعله آمنًا. <xliff:g id="VIEW_TERMS">%1$s</xliff:g>"</string>
-    <!-- no translation found for device_owner_short_info_with_terms_headers (7990913720137761161) -->
+    <!-- no translation found for profile_owner_info_with_terms_headers (2016816688186591080) -->
+    <skip />
+    <!-- no translation found for device_owner_info (9015249759994198680) -->
+    <skip />
+    <!-- no translation found for device_owner_info_with_terms_headers (4019378178527872716) -->
+    <skip />
+    <!-- no translation found for contact_device_provider (462704678510856705) -->
+    <skip />
+    <!-- no translation found for device_provider (3278537487796207495) -->
+    <skip />
+    <!-- no translation found for your_org_app_used (4136582853192890775) -->
+    <skip />
+    <!-- no translation found for your_organization_beginning (5952561489910967255) -->
+    <skip />
+    <!-- no translation found for your_organization_middle (8288538158061644733) -->
     <skip />
     <string name="view_terms" msgid="7230493092383341605">"عرض البنود"</string>
     <string name="accept_and_continue" msgid="8361403983052024073">"قبول ومتابعة"</string>
@@ -121,12 +135,8 @@
     <string name="cancel_setup_and_factory_reset_dialog_msg" msgid="808442439937994485">"سيؤدي إنهاء هذا الإعداد إلى إعادة تعيين بيانات المصنع لجهازك ونقلك إلى الشاشة الأولى مرة أخرى."</string>
     <string name="cancel_setup_and_factory_reset_dialog_cancel" msgid="2810966091829264727">"إلغاء"</string>
     <string name="cancel_setup_and_factory_reset_dialog_ok" msgid="7168008267496150529">"إعادة ضبط الجهاز"</string>
-    <!-- no translation found for join_two_items (6110273439759895837) -->
-    <skip />
-    <!-- no translation found for join_many_items_last (3953431463001211545) -->
-    <skip />
-    <!-- no translation found for join_many_items_first (8365482726853276608) -->
-    <skip />
-    <!-- no translation found for join_many_items_middle (8569294838319639963) -->
-    <skip />
+    <string name="join_two_items" msgid="6110273439759895837">"<xliff:g id="FIRST_ITEM">%1$s</xliff:g> و<xliff:g id="SECOND_ITEM">%2$s</xliff:g>"</string>
+    <string name="join_many_items_last" msgid="3953431463001211545">"<xliff:g id="ALL_BUT_LAST_ITEM">%1$s</xliff:g> و<xliff:g id="LAST_ITEM_0">%2$s</xliff:g>"</string>
+    <string name="join_many_items_first" msgid="8365482726853276608">"<xliff:g id="FIRST_ITEM">%1$s</xliff:g>، <xliff:g id="ALL_BUT_FIRST_AND_LAST_ITEM">%2$s</xliff:g>"</string>
+    <string name="join_many_items_middle" msgid="8569294838319639963">"<xliff:g id="ADDED_ITEM">%1$s</xliff:g>، <xliff:g id="REST_OF_ITEMS">%2$s</xliff:g>"</string>
 </resources>
