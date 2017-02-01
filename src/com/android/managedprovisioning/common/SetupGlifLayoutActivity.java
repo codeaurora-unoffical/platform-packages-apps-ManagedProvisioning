@@ -16,10 +16,10 @@
 
 package com.android.managedprovisioning.common;
 
+import android.annotation.Nullable;
 import android.content.res.ColorStateList;
-import android.graphics.drawable.Drawable;
-
 import android.support.annotation.VisibleForTesting;
+
 import com.android.managedprovisioning.R;
 import com.android.setupwizardlib.GlifLayout;
 
@@ -27,7 +27,6 @@ import com.android.setupwizardlib.GlifLayout;
  * Base class for setting up the layout.
  */
 public abstract class SetupGlifLayoutActivity extends SetupLayoutActivity {
-
     public SetupGlifLayoutActivity() {
         super();
     }
@@ -36,29 +35,23 @@ public abstract class SetupGlifLayoutActivity extends SetupLayoutActivity {
     protected SetupGlifLayoutActivity(Utils utils) {
         super(utils);
     }
-    protected void initializeLayoutParams(int layoutResourceId, int headerResourceId,
-            boolean showProgressBar) {
+
+    protected void initializeLayoutParams(int layoutResourceId, @Nullable Integer headerResourceId,
+            boolean showProgressBar, int mainColor) {
         setContentView(layoutResourceId);
         GlifLayout layout = (GlifLayout) findViewById(R.id.setup_wizard_layout);
-        layout.setHeaderText(headerResourceId);
+
+        setMainColor(mainColor);
+        layout.setPrimaryColor(ColorStateList.valueOf(mainColor));
+
+        if (headerResourceId != null) {
+            layout.setHeaderText(headerResourceId);
+        }
+
         if (showProgressBar) {
             layout.setProgressBarShown(true);
         }
-    }
 
-    protected void maybeSetLogoAndMainColor(Integer mainColor) {
-        // null means the default value
-        if (mainColor == null) {
-            mainColor = getResources().getColor(R.color.orange);
-        }
-        mainColor = toSolidColor(mainColor);
-
-
-        GlifLayout layout = (GlifLayout) findViewById(R.id.setup_wizard_layout);
-        Drawable logo = LogoUtils.getOrganisationLogo(this);
-        layout.setIcon(logo);
-        layout.setPrimaryColor(ColorStateList.valueOf(mainColor));
-
-        setMainColor(mainColor);
+        layout.setIcon(LogoUtils.getOrganisationLogo(this, mainColor));
     }
 }

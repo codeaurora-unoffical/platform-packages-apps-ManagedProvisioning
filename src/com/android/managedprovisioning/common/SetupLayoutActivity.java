@@ -16,6 +16,8 @@
 
 package com.android.managedprovisioning.common;
 
+import static android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.VIEW_UNKNOWN;
 
 import android.app.Activity;
@@ -24,6 +26,7 @@ import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.VisibleForTesting;
@@ -31,6 +34,7 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.analytics.TimeLogger;
 
 /**
@@ -55,6 +59,11 @@ public abstract class SetupLayoutActivity extends Activity {
         super.onCreate(savedInstanceState);
         mTimeLogger = new TimeLogger(this, getMetricsCategory());
         mTimeLogger.start();
+
+        // lock orientation to portrait on phones
+        if (getResources().getBoolean(R.bool.lock_to_portrait)) {
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        }
     }
 
     @Override
@@ -71,6 +80,9 @@ public abstract class SetupLayoutActivity extends Activity {
         return mUtils;
     }
 
+    /**
+     * @param mainColor integer representing the color (i.e. not resource id)
+     */
     protected void setMainColor(int mainColor) {
         mainColor = toSolidColor(mainColor);
 
@@ -79,25 +91,14 @@ public abstract class SetupLayoutActivity extends Activity {
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
         window.setStatusBarColor(mainColor);
 
-        boolean brightColor = getUtils().isBrightColor(mainColor);
-        setStatusBarIconColor(brightColor);
-
-        setTaskDescription(new TaskDescription(null /* label */, null /* icon */, mainColor));
-    }
-
-    /**
-     * Sets status bar icons to white / black based on the boolean param
-     */
-    protected void setStatusBarIconColor(boolean setToDark) {
+        // set status bar icon style
         View decorView = getWindow().getDecorView();
         int visibility = decorView.getSystemUiVisibility();
+        decorView.setSystemUiVisibility(getUtils().isBrightColor(mainColor)
+                ? (visibility | SYSTEM_UI_FLAG_LIGHT_STATUS_BAR)
+                : (visibility & ~SYSTEM_UI_FLAG_LIGHT_STATUS_BAR));
 
-        if (setToDark) {
-            visibility |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-        } else {
-            visibility &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-        }
-        decorView.setSystemUiVisibility(visibility);
+        setTaskDescription(new TaskDescription(null /* label */, null /* icon */, mainColor));
     }
 
     /**
@@ -105,7 +106,7 @@ public abstract class SetupLayoutActivity extends Activity {
      *
      * <p>Needed for correct calculation of Status Bar icons (light / dark)
      */
-    Integer toSolidColor(Integer color) {
+    private Integer toSolidColor(Integer color) {
         return Color.argb(255, Color.red(color), Color.green(color), Color.blue(color));
     }
 
