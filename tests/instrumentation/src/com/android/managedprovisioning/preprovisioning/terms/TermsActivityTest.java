@@ -29,6 +29,7 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
 import android.support.test.espresso.ViewAssertion;
+import android.support.test.filters.FlakyTest;
 import android.support.test.filters.SmallTest;
 import android.support.test.rule.ActivityTestRule;
 
@@ -50,7 +51,7 @@ import java.util.Map;
  */
 @SmallTest
 public class TermsActivityTest {
-    private static final String HEADER_0_TOP = "AOSP";
+    private static final String HEADER_0_TOP = "General";
     private static final String HEADER_1 = "header1";
     private static final String HEADER_2 = "header2";
     private static final String HEADER_3_BOTTOM = "header3";
@@ -78,6 +79,8 @@ public class TermsActivityTest {
         TestInstrumentationRunner.unregisterReplacedActivity(TermsActivity.class);
     }
 
+    // TODO(b/35613314): remove @FlakyTest once bug fixed
+    @FlakyTest
     @Test
     public void expanderTest() throws InterruptedException {
         // given an intent with disclaimers
@@ -153,3 +156,4 @@ public class TermsActivityTest {
         return new DisclaimersParam.Disclaimer(header, contentPath);
     }
 }
+
