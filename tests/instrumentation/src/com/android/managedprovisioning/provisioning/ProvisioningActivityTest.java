@@ -251,7 +251,7 @@ public class ProvisioningActivityTest {
 
         // WHEN an error occurred that does not require factory reset
         final int errorMsgId = R.string.managed_provisioning_error_text;
-        mActivityRule.runOnUiThread(() -> mActivityRule.getActivity().error(errorMsgId, false));
+        mActivityRule.runOnUiThread(() -> mActivityRule.getActivity().error(R.string.cant_set_up_device, errorMsgId, false));
 
         // THEN the UI should show an error dialog
         onView(withText(errorMsgId)).check(matches(isDisplayed()));
@@ -272,14 +272,14 @@ public class ProvisioningActivityTest {
 
         // WHEN an error occurred that does not require factory reset
         final int errorMsgId = R.string.managed_provisioning_error_text;
-        mActivityRule.runOnUiThread(() -> mActivityRule.getActivity().error(errorMsgId, true));
+        mActivityRule.runOnUiThread(() -> mActivityRule.getActivity().error(R.string.cant_set_up_device, errorMsgId, true));
 
         // THEN the UI should show an error dialog
         onView(withText(errorMsgId)).check(matches(isDisplayed()));
 
         // WHEN clicking the ok button that says that factory reset is required
         onView(withId(android.R.id.button1))
-                .check(matches(withText(R.string.device_owner_error_reset)))
+                .check(matches(withText(R.string.reset)))
                 .perform(click());
 
         // THEN factory reset should be invoked
@@ -374,7 +374,9 @@ public class ProvisioningActivityTest {
         pressBack();
 
         // THEN the cancel dialog should be shown
-        onView(withText(R.string.device_owner_cancel_message)).check(matches(isDisplayed()));
+        onView(withText(R.string.stop_setup_reset_device_question)).check(matches(isDisplayed()));
+        onView(withText(R.string.this_will_reset_take_back_first_screen))
+                .check(matches(isDisplayed()));
 
         // WHEN deciding not to cancel
         onView(withId(android.R.id.button2))
@@ -388,11 +390,11 @@ public class ProvisioningActivityTest {
         pressBack();
 
         // THEN the cancel dialog should be shown
-        onView(withText(R.string.device_owner_cancel_message)).check(matches(isDisplayed()));
+        onView(withText(R.string.stop_setup_reset_device_question)).check(matches(isDisplayed()));
 
         // WHEN deciding to cancel
         onView(withId(android.R.id.button1))
-                .check(matches(withText(R.string.device_owner_error_reset)))
+                .check(matches(withText(R.string.reset)))
                 .perform(click());
 
         // THEN factory reset should be invoked
@@ -403,13 +405,6 @@ public class ProvisioningActivityTest {
     public void testSuccess() throws Throwable {
         // GIVEN the activity was launched with a profile owner intent
         launchActivityAndWait(PROFILE_OWNER_INTENT);
-
-        // WHEN provisioning completes successfully
-        mActivityRule.runOnUiThread(()
-                -> mActivityRule.getActivity().provisioningTasksCompleted());
-
-        // THEN preFinalization should be invoked
-        verify(mProvisioningManager).preFinalize();
 
         // WHEN preFinalization is completed
         mActivityRule.runOnUiThread(() -> mActivityRule.getActivity().preFinalizationCompleted());

@@ -28,6 +28,7 @@ import static org.hamcrest.core.IsNot.not;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
+import android.support.test.InstrumentationRegistry;
 import android.support.test.espresso.ViewAssertion;
 import android.support.test.filters.FlakyTest;
 import android.support.test.filters.SmallTest;
@@ -51,7 +52,9 @@ import java.util.Map;
  */
 @SmallTest
 public class TermsActivityTest {
-    private static final String HEADER_0_TOP = "General";
+
+    private static final String HEADER_0_TOP = InstrumentationRegistry.getTargetContext()
+        .getString(R.string.work_profile_info);
     private static final String HEADER_1 = "header1";
     private static final String HEADER_2 = "header2";
     private static final String HEADER_3_BOTTOM = "header3";
@@ -70,7 +73,7 @@ public class TermsActivityTest {
     public void setUp() throws Settings.SettingNotFoundException {
         TestInstrumentationRunner.registerReplacedActivity(TermsActivity.class,
                 (classLoader, className, intent) -> new TermsActivity(
-                        (file) -> mPathToContent.get(file.getPath())));
+                        (file) -> mPathToContent.get(file.getPath()), null));
         mPathToContent.clear();
     }
 

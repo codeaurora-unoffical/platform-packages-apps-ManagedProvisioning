@@ -18,7 +18,6 @@ package com.android.managedprovisioning.provisioning;
 
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -36,6 +35,7 @@ import android.os.Message;
 import android.support.test.filters.SmallTest;
 import android.support.test.runner.AndroidJUnit4;
 
+import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
 import com.android.managedprovisioning.analytics.TimeLogger;
 import com.android.managedprovisioning.model.ProvisioningParams;
@@ -125,18 +125,6 @@ public class ProvisioningManagerTest {
     }
 
     @Test
-    public void testPreFinalizeProvisioning() {
-        // GIVEN provisioning has been started
-        mManager.maybeStartProvisioning(TEST_PARAMS);
-
-        // WHEN prefinalizing provisioning
-        mManager.preFinalize();
-
-        // THEN the controller should be prefinalized
-        verify(mController).preFinalize();
-    }
-
-    @Test
     public void testRegisterListener_noProgress() {
         // GIVEN no progress has previously been achieved
         // WHEN a listener is registered
@@ -175,33 +163,26 @@ public class ProvisioningManagerTest {
         // GIVEN a listener is registered
         mManager.registerListener(mCallback);
         // WHEN some progress has occurred previously
-        mManager.error(TEST_ERROR_ID, TEST_FACTORY_RESET_REQUIRED);
+        mManager.error(R.string.cant_set_up_device, TEST_ERROR_ID, TEST_FACTORY_RESET_REQUIRED);
         // THEN the listener should receive a callback
-        verify(mCallback).error(TEST_ERROR_ID, TEST_FACTORY_RESET_REQUIRED);
+        verify(mCallback).error(R.string.cant_set_up_device, TEST_ERROR_ID, TEST_FACTORY_RESET_REQUIRED);
 
         // WHEN the listener is unregistered and registered again
         mManager.unregisterListener(mCallback);
         mManager.registerListener(mCallback);
         // THEN the listener should receive a callback again
-        verify(mCallback, times(2)).error(TEST_ERROR_ID, TEST_FACTORY_RESET_REQUIRED);
+        verify(mCallback, times(2)).error(R.string.cant_set_up_device, TEST_ERROR_ID, TEST_FACTORY_RESET_REQUIRED);
         verifyNoMoreInteractions(mCallback);
     }
 
     @Test
-    public void testListener_tasksCompleted() {
-        // GIVEN a listener is registered
-        mManager.registerListener(mCallback);
-        // WHEN some progress has occurred previously
+    public void testProvisioningTasksCompleted() {
+        // GIVEN provisioning has been started
+        mManager.maybeStartProvisioning(TEST_PARAMS);
+        // WHEN all tasks are completed.
         mManager.provisioningTasksCompleted();
-        // THEN the listener should receive a callback
-        verify(mCallback).provisioningTasksCompleted();
-
-        // WHEN the listener is unregistered and registered again
-        mManager.unregisterListener(mCallback);
-        mManager.registerListener(mCallback);
-        // THEN the listener should receive a callback again
-        verify(mCallback, times(2)).provisioningTasksCompleted();
-        verifyNoMoreInteractions(mCallback);
+        // THEN the controller should be prefinalized
+        verify(mController).preFinalize();
     }
 
     @Test
