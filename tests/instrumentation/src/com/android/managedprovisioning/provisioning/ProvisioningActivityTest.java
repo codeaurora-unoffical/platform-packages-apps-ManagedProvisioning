@@ -223,25 +223,13 @@ public class ProvisioningActivityTest {
         launchActivityAndWait(PROFILE_OWNER_INTENT);
 
         // WHEN the activity is paused
-        InstrumentationRegistry.getInstrumentation()
-                .callActivityOnPause(mActivityRule.getActivity());
+        mActivityRule.runOnUiThread(() -> {
+            InstrumentationRegistry.getInstrumentation()
+                    .callActivityOnPause(mActivityRule.getActivity());
+        });
 
         // THEN the listener is unregistered
         verify(mProvisioningManager).unregisterListener(any(ProvisioningManagerCallback.class));
-    }
-
-    @Test
-    public void testProgressUpdate() throws Throwable {
-        // GIVEN the activity was launched with a profile owner intent
-        launchActivityAndWait(PROFILE_OWNER_INTENT);
-        final int progressMsgId = R.string.progress_initialize;
-
-        // WHEN a progress update was posted
-        mActivityRule.runOnUiThread(()
-                -> mActivityRule.getActivity().progressUpdate(progressMsgId));
-
-        // THEN the UI should show the progress update
-        onView(withId(R.id.prog_text)).check(matches(withText(progressMsgId)));
     }
 
     @Test
