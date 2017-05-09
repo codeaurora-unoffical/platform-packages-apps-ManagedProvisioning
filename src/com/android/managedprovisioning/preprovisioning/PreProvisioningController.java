@@ -17,9 +17,11 @@
 package com.android.managedprovisioning.preprovisioning;
 
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE;
+import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_SHAREABLE_DEVICE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_USER;
+import static android.app.admin.DevicePolicyManager.CODE_ADD_MANAGED_PROFILE_DISALLOWED;
 import static android.app.admin.DevicePolicyManager.CODE_CANNOT_ADD_MANAGED_PROFILE;
 import static android.app.admin.DevicePolicyManager.CODE_HAS_DEVICE_OWNER;
 import static android.app.admin.DevicePolicyManager.CODE_MANAGED_USERS_NOT_SUPPORTED;
@@ -27,6 +29,7 @@ import static android.app.admin.DevicePolicyManager.CODE_NOT_SYSTEM_USER;
 import static android.app.admin.DevicePolicyManager.CODE_NOT_SYSTEM_USER_SPLIT;
 import static android.app.admin.DevicePolicyManager.CODE_OK;
 import static android.app.admin.DevicePolicyManager.CODE_SPLIT_SYSTEM_USER_DEVICE_SYSTEM_USER;
+import static android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED;
 
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_PREPROVISIONING_ACTIVITY_TIME_MS;
 import static com.android.internal.util.Preconditions.checkNotNull;
@@ -135,7 +138,7 @@ public class PreProvisioningController {
          * @param messageId resource id used to form the user facing error message
          * @param errorMessage an error message that gets logged for debugging
          */
-        void showErrorAndClose(int titleId, int messageId, String errorMessage);
+        void showErrorAndClose(Integer titleId, int messageId, String errorMessage);
 
         /**
          * Request the user to encrypt the device.
@@ -204,7 +207,7 @@ public class PreProvisioningController {
             return;
         }
 
-        if (!verifyCaller(intent, callingPackage)) {
+        if (!verifyActionAndCaller(intent, callingPackage)) {
             return;
         }
 
@@ -414,35 +417,66 @@ public class PreProvisioningController {
     }
 
     /** @return False if condition preventing further provisioning */
-    @VisibleForTesting protected boolean verifyCaller(Intent intent, String callingPackage) {
-        try {
-            // If this is a resume after encryption or trusted intent, we don't need to verify the
-            // caller. Otherwise, verify that the calling app is trying to set itself as
-            // Device/ProfileOwner
-            if (!ACTION_RESUME_PROVISIONING.equals(intent.getAction()) &&
-                    !mParams.startedByTrustedSource) {
-                verifyCaller(callingPackage);
-            }
-        } catch (IllegalProvisioningArgumentException e) {
+    @VisibleForTesting protected boolean verifyActionAndCaller(Intent intent,
+            String callingPackage) {
+        if (verifyActionAndCallerInner(intent, callingPackage)) {
+            return true;
+        } else {
             mUi.showErrorAndClose(R.string.cant_set_up_device, R.string.contact_your_admin_for_help,
-                    e.getMessage());
+                    "invalid intent or calling package");
+            return false;
         }
+    }
+
+    private boolean verifyActionAndCallerInner(Intent intent, String callingPackage) {
+        // If this is a resume after encryption or trusted intent, we verify the activity alias.
+        // Otherwise, verify that the calling app is trying to set itself as Device/ProfileOwner
+        if (ACTION_RESUME_PROVISIONING.equals(intent.getAction())) {
+            return verifyActivityAlias(intent, "PreProvisioningActivityAfterEncryption");
+        } else if (ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
+            return verifyActivityAlias(intent, "PreProvisioningActivityViaNfc");
+        } else if (ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE.equals(intent.getAction())) {
+            return verifyActivityAlias(intent, "PreProvisioningActivityViaTrustedApp");
+        } else {
+            return verifyCaller(callingPackage);
+        }
+    }
+
+    private boolean verifyActivityAlias(Intent intent, String activityAlias) {
+        ComponentName componentName = intent.getComponent();
+        if (componentName == null || componentName.getClassName() == null) {
+            ProvisionLogger.loge("null class in component when verifying activity alias "
+                    + activityAlias);
+            return false;
+        }
+
+        if (!componentName.getClassName().endsWith(activityAlias)) {
+            ProvisionLogger.loge("Looking for activity alias " + activityAlias + ", but got "
+                    + componentName.getClassName());
+            return false;
+        }
+
         return true;
     }
 
     /**
      * Verify that the caller is trying to set itself as owner.
-     * @throws IllegalProvisioningArgumentException if the caller is trying to set a different
-     * package as owner.
+     * @return false if the caller is trying to set a different package as owner.
      */
-    private void verifyCaller(@NonNull String callingPackage)
-            throws IllegalProvisioningArgumentException {
-        checkNotNull(callingPackage,
-                "Calling package is null. Was startActivityForResult used to start this activity?");
-        if (!callingPackage.equals(mParams.inferDeviceAdminPackageName())) {
-            throw new IllegalProvisioningArgumentException("Permission denied, "
-                    + "calling package tried to set a different package as owner. ");
+    private boolean verifyCaller(@NonNull String callingPackage) {
+        if (callingPackage == null) {
+            ProvisionLogger.loge("Calling package is null. Was startActivityForResult used to "
+                    + "start this activity?");
+            return false;
         }
+
+        if (!callingPackage.equals(mParams.inferDeviceAdminPackageName())) {
+            ProvisionLogger.loge("Permission denied, "
+                    + "calling package tried to set a different package as owner. ");
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -629,31 +663,46 @@ public class PreProvisioningController {
 
     private void showManagedProfileErrorAndClose(int provisioningPreCondition) {
         UserInfo userInfo = mUserManager.getUserInfo(mUserManager.getUserHandle());
+        ProvisionLogger.logw("DevicePolicyManager.checkProvisioningPreCondition returns code: "
+                + provisioningPreCondition);
         switch (provisioningPreCondition) {
+            case CODE_ADD_MANAGED_PROFILE_DISALLOWED:
             case CODE_MANAGED_USERS_NOT_SUPPORTED:
                 mUi.showErrorAndClose(R.string.cant_add_work_profile,
                         R.string.user_cant_have_work_profile_contact_admin,
                         "Exiting managed profile provisioning, managed profiles feature is not available");
-                return;
+                break;
             case CODE_CANNOT_ADD_MANAGED_PROFILE:
                 if (!userInfo.canHaveProfile()) {
                     mUi.showErrorAndClose(R.string.cant_add_work_profile,
                             R.string.user_cannot_have_work_profiles_contact_admin,
-                            "Exiting managed profile provisioning, calling user cannot have managed profiles.");
+                            "Exiting managed profile provisioning, calling user cannot have managed profiles");
+                } else if (isRemovingManagedProfileDisallowed()){
+                    mUi.showErrorAndClose(null,
+                            R.string.managed_provisioning_error_text,
+                            "Exiting managed profile provisioning, removing managed profile is disallowed");
                 } else {
                     mUi.showErrorAndClose(R.string.cant_add_work_profile,
                             R.string.too_many_users_on_device_remove_user_try_again,
-                            "Exiting managed profile provisioning, cannot add more managedprofiles");
+                            "Exiting managed profile provisioning, cannot add more managed profiles");
                 }
-                return;
+                break;
             case CODE_SPLIT_SYSTEM_USER_DEVICE_SYSTEM_USER:
                 mUi.showErrorAndClose(R.string.cant_add_work_profile,
                         R.string.contact_your_admin_for_help,
                         "Exiting managed profile provisioning, a device owner exists");
-                return;
+                break;
+            default:
+                mUi.showErrorAndClose(R.string.cant_add_work_profile,
+                        R.string.contact_your_admin_for_help,
+                        "Managed profile provisioning not allowed for an unknown " +
+                        "reason, code: " + provisioningPreCondition);
         }
-        mUi.showErrorAndClose(R.string.cant_add_work_profile, R.string.contact_your_admin_for_help,
-                "Managed profile provisioning not allowed for an unknown reason.");
+    }
+
+    private boolean isRemovingManagedProfileDisallowed() {
+        return mUtils.alreadyHasManagedProfile(mContext) != -1
+                && mUserManager.hasUserRestriction(UserManager.DISALLOW_REMOVE_MANAGED_PROFILE);
     }
 
     private void showDeviceOwnerErrorAndClose(int provisioningPreCondition) {
