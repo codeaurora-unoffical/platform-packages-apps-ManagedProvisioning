@@ -52,7 +52,7 @@ import android.content.Context;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.PersistableBundle;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.AtomicFile;
 import android.util.Xml;
 
@@ -604,6 +604,11 @@ public final class ProvisioningParams extends PersistableBundlable {
             return this;
         }
 
+        /**
+         * Builds the {@link ProvisioningParams} object. Note that {@link
+         * #setProvisioningAction(String)} and {@link #setDeviceAdminComponentName(ComponentName)}
+         * methods must be called with a non-null parameter before this is called.
+         */
         public ProvisioningParams build() {
             return new ProvisioningParams(this);
         }
