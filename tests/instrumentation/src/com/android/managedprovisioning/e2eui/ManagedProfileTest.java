@@ -15,33 +15,37 @@
  */
 package com.android.managedprovisioning.e2eui;
 
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
+
+import android.content.Intent;
 import android.content.pm.UserInfo;
 import android.os.UserManager;
-import android.support.test.espresso.ViewInteraction;
-import android.support.test.espresso.base.DefaultFailureHandler;
-import android.support.test.filters.LargeTest;
-import android.support.test.rule.ActivityTestRule;
 import android.test.AndroidTestCase;
 import android.util.Log;
-
 import android.view.View;
+
+import androidx.test.espresso.ViewInteraction;
+import androidx.test.espresso.base.DefaultFailureHandler;
+import androidx.test.filters.LargeTest;
+import androidx.test.rule.ActivityTestRule;
+
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.TestInstrumentationRunner;
+import com.android.managedprovisioning.common.BlockingBroadcastReceiver;
 import com.android.managedprovisioning.preprovisioning.PreProvisioningActivity;
+
 import org.hamcrest.Matcher;
 
 import java.util.List;
-
-import static android.support.test.espresso.Espresso.onView;
-import static android.support.test.espresso.action.ViewActions.click;
-import static android.support.test.espresso.action.ViewActions.scrollTo;
-import static android.support.test.espresso.matcher.ViewMatchers.withId;
 
 @LargeTest
 public class ManagedProfileTest extends AndroidTestCase {
     private static final String TAG = "ManagedProfileTest";
 
-    private static final long TIMEOUT = 120L;
+    private static final long TIMEOUT_SECONDS = 120L;
 
     public ActivityTestRule mActivityRule;
     private ProvisioningResultListener mResultListener;
@@ -74,9 +78,33 @@ public class ManagedProfileTest extends AndroidTestCase {
         for (UserInfo user : users) {
             if (user.isManagedProfile()) {
                 int userId = user.getUserHandle().getIdentifier();
-                um.removeUserEvenWhenDisallowed(userId);
-                Log.e(TAG, "remove managed profile user: " + userId);
+                removeProfileAndWait(userId);
             }
+        }
+    }
+
+    /** Remove a profile and wait until it has been removed before continuing. */
+    private void removeProfileAndWait(int userId) {
+        Log.e(TAG, "remove managed profile user: " + userId);
+        UserManager userManager = getContext().getSystemService(UserManager.class);
+
+        // Intent.ACTION_MANAGED_PROFILE_REMOVED gets sent too early, so we need to wait for
+        // Intent.ACTION_USER_REMOVED
+        BlockingBroadcastReceiver receiver =
+                new BlockingBroadcastReceiver(mContext, Intent.ACTION_USER_REMOVED);
+        try {
+            receiver.register();
+            userManager.removeUserEvenWhenDisallowed(userId);
+
+            long timeoutMillis = TIMEOUT_SECONDS * 1000;
+            Intent confirmation = receiver.awaitForBroadcast(timeoutMillis);
+
+            if (confirmation == null) {
+                // The user was not removed
+                fail("Waiting for profile to be removed, but was not removed.");
+            }
+        } finally {
+            receiver.unregisterQuietly();
         }
     }
 
@@ -93,10 +121,10 @@ public class ManagedProfileTest extends AndroidTestCase {
             }
         }.run();
 
-        if (mResultListener.await(TIMEOUT)) {
+        if (mResultListener.await(TIMEOUT_SECONDS)) {
             assertTrue(mResultListener.getResult());
         } else {
-            fail("timeout: " + TIMEOUT + " seconds");
+            fail("timeout: " + TIMEOUT_SECONDS + " seconds");
         }
     }
 
