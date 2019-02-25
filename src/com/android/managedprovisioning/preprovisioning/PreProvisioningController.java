@@ -30,13 +30,20 @@ import static android.app.admin.DevicePolicyManager.CODE_NOT_SYSTEM_USER_SPLIT;
 import static android.app.admin.DevicePolicyManager.CODE_OK;
 import static android.app.admin.DevicePolicyManager.CODE_SPLIT_SYSTEM_USER_DEVICE_SYSTEM_USER;
 import static android.app.admin.DevicePolicyManager.CODE_USER_SETUP_COMPLETED;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_IMEI;
+import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SERIAL_NUMBER;
 import static android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED;
 
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_PREPROVISIONING_ACTIVITY_TIME_MS;
 import static com.android.internal.util.Preconditions.checkNotNull;
 import static com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker.CANCELLED_BEFORE_PROVISIONING;
 import static com.android.managedprovisioning.common.Globals.ACTION_RESUME_PROVISIONING;
+import static com.android.managedprovisioning.model.ProvisioningParams.PROVISIONING_MODE_FULLY_MANAGED_DEVICE;
+import static com.android.managedprovisioning.model.ProvisioningParams.PROVISIONING_MODE_MANAGED_PROFILE;
 
+import android.accounts.Account;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
@@ -53,8 +60,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.os.Build;
+import android.os.PersistableBundle;
 import android.os.UserManager;
 import android.service.persistentdata.PersistentDataBlockManager;
+import android.telephony.TelephonyManager;
 import android.text.TextUtils;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -189,6 +199,10 @@ public class PreProvisioningController {
          * profiles and ask the user to choose a different one.
          */
         void showCurrentLauncherInvalid();
+
+        void prepareAdminIntegratedFlow(ProvisioningParams params);
+
+        void showFactoryResetDialog(Integer titleId, int messageId);
     }
 
     /**
@@ -213,11 +227,6 @@ public class PreProvisioningController {
             return;
         }
 
-        // Check whether provisioning is allowed for the current action
-        if (!checkDevicePolicyPreconditions()) {
-            return;
-        }
-
         // PO preconditions
         boolean waitForUserDelete = false;
         if (isProfileOwnerProvisioning()) {
@@ -234,8 +243,7 @@ public class PreProvisioningController {
             }
         }
 
-        // DO preconditions
-        if (!isProfileOwnerProvisioning()) {
+        if (isDeviceOwnerProvisioning()) {
             // TODO: make a general test based on deviceAdminDownloadInfo field
             // PO doesn't ever initialize that field, so OK as a general case
             if (!mUtils.isConnectedToNetwork(mContext) && mParams.wifiInfo == null
@@ -265,7 +273,7 @@ public class PreProvisioningController {
         mProvisioningAnalyticsTracker.logPreProvisioningStarted(mContext, intent);
 
         // as of now this is only true for COMP provisioning, where we already have a user consent
-        // since the DPC is DO already
+        // since the DPC is DO already.
         if (mParams.skipUserConsent || isSilentProvisioningForTestingDeviceOwner()
                 || isSilentProvisioningForTestingManagedProfile()) {
             if (!waitForUserDelete) {
@@ -274,15 +282,37 @@ public class PreProvisioningController {
             return;
         }
 
+        if (mParams.isOrganizationOwnedProvisioning) {
+            mUi.prepareAdminIntegratedFlow(mParams);
+        } else {
+            showUserConsentScreen();
+        }
+    }
+
+    void showUserConsentScreen() {
+        // Check whether provisioning is allowed for the current action
+        if (!checkDevicePolicyPreconditions()) {
+            if (mParams.isOrganizationOwnedProvisioning) {
+                mUi.showFactoryResetDialog(R.string.cant_set_up_device,
+                        R.string.cant_set_up_device);
+            } else {
+                return;
+            }
+        }
+
+        ProvisionLogger.logd("Sending user consent:" + mParams.provisioningAction);
+
         CustomizationParams customization =
                 CustomizationParams.createInstance(mParams, mContext, mUtils);
+
+        ProvisionLogger.logd("Provisioning action for user consent:" + mParams.provisioningAction);
 
         // show UI so we can get user's consent to continue
         if (isProfileOwnerProvisioning()) {
             boolean isComp = mDevicePolicyManager.isDeviceManaged();
             mUi.initiateUi(R.layout.intro_profile_owner, R.string.setup_profile, null, null, true,
                     isComp, getDisclaimerHeadings(), customization);
-        } else {
+        } else if (isDeviceOwnerProvisioning()) {
             String packageName = mParams.inferDeviceAdminPackageName();
             MdmPackageInfo packageInfo = MdmPackageInfo.createFromPackageName(mContext,
                     packageName);
@@ -300,6 +330,60 @@ public class PreProvisioningController {
                     getDisclaimerHeadings(),
                     customization);
         }
+    }
+
+    boolean updateProvisioningParamsFromIntent(Intent resultIntent) {
+        final int provisioningMode = resultIntent.getIntExtra(
+                DevicePolicyManager.EXTRA_PROVISIONING_MODE, 0);
+        final ProvisioningParams.Builder builder = mParams.toBuilder();
+        switch (provisioningMode) {
+            case DevicePolicyManager.PROVISIONING_MODE_FULLY_MANAGED_DEVICE:
+                builder.setProvisioningMode(PROVISIONING_MODE_FULLY_MANAGED_DEVICE);
+                builder.setProvisioningAction(ACTION_PROVISION_MANAGED_DEVICE);
+                maybeUpdateAdminExtrasBundle(builder, resultIntent);
+                mParams = builder.build();
+                return true;
+            case DevicePolicyManager.PROVISIONING_MODE_MANAGED_PROFILE:
+                builder.setProvisioningMode(PROVISIONING_MODE_MANAGED_PROFILE);
+                builder.setProvisioningAction(ACTION_PROVISION_MANAGED_PROFILE);
+                maybeUpdateAccountToMigrate(builder, resultIntent);
+                maybeUpdateAdminExtrasBundle(builder, resultIntent);
+                mParams = builder.build();
+                return true;
+            default:
+                ProvisionLogger.logw("Unknown returned provisioning mode:"
+                        + provisioningMode);
+                return false;
+        }
+    }
+
+    private void maybeUpdateAccountToMigrate(ProvisioningParams.Builder builder,
+            Intent resultIntent) {
+        if (resultIntent.hasExtra(EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE)) {
+            final Account account = resultIntent.getParcelableExtra(
+                    EXTRA_PROVISIONING_ACCOUNT_TO_MIGRATE);
+            builder.setAccountToMigrate(account);
+        }
+    }
+
+    private void maybeUpdateAdminExtrasBundle(ProvisioningParams.Builder builder,
+            Intent resultIntent) {
+        if (resultIntent.hasExtra(EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE)) {
+            final PersistableBundle bundle = resultIntent.getParcelableExtra(
+                    EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE);
+            builder.setAdminExtrasBundle(bundle);
+        }
+    }
+
+    void setProvisioningMode(int provisioningMode) {
+        mParams = mParams.toBuilder().setProvisioningMode(provisioningMode).build();
+    }
+
+    void putExtrasIntoGetModeIntent(Intent intentGetMode) {
+        final TelephonyManager telephonyManager = mContext.getSystemService(TelephonyManager.class);
+        intentGetMode.putExtra(EXTRA_PROVISIONING_IMEI, telephonyManager.getImei());
+        intentGetMode.putExtra(EXTRA_PROVISIONING_SERIAL_NUMBER, Build.getSerial());
+        intentGetMode.putExtra(EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE, mParams.adminExtrasBundle);
     }
 
     private @NonNull List<String> getDisclaimerHeadings() {
@@ -597,6 +681,14 @@ public class PreProvisioningController {
     public boolean isProfileOwnerProvisioning() {
         return mUtils.isProfileOwnerAction(mParams.provisioningAction);
     }
+
+    /**
+     * Returns whether the provisioning process is a device owner provisioning process.
+     */
+    public boolean isDeviceOwnerProvisioning() {
+        return mUtils.isDeviceOwnerAction(mParams.provisioningAction);
+    }
+
 
     @Nullable
     public ProvisioningParams getParams() {
