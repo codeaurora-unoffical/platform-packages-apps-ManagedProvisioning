@@ -57,7 +57,10 @@
     <uses-permission android:name="android.permission.ACCESS_PDB_STATE" />
     <uses-permission android:name="android.permission.PEERS_MAC_ADDRESS" />
 
-    <uses-permission android:name="android.permission.NETWORK_SETTINGS" />
+    <uses-permission android:name="android.permission.NETWORK_MANAGED_PROVISIONING" />
+
+    <uses-permission android:name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+    <uses-permission android:name="android.permission.GRANT_PROFILE_OWNER_DEVICE_IDS_ACCESS" />
 
     <application
         android:label="@string/app_label"
@@ -77,6 +80,14 @@
              android:immersive="true"
              android:launchMode="singleTop"
              android:theme="@style/SuwThemeGlif.Light">
+        </activity>
+
+        <activity
+            android:name=".provisioning.AdminIntegratedFlowPrepareActivity"
+            android:excludeFromRecents="true"
+            android:immersive="true"
+            android:launchMode="singleTop"
+            android:theme="@style/SuwThemeGlif.Light">
         </activity>
 
         <activity
@@ -191,6 +202,10 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".transition.TransitionActivity"
+            android:theme="@style/SuwThemeGlif.Light" />
 
         <service android:name=".provisioning.ProvisioningService" />
         <service android:name=".finalization.SendDpcBroadcastService" />

@@ -21,16 +21,16 @@ import static android.app.admin.DevicePolicyManager
         .ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 import static android.app.admin.DevicePolicyManager.ACTION_STATE_USER_SETUP_COMPLETE;
-import static android.support.test.espresso.Espresso.onView;
-import static android.support.test.espresso.Espresso.pressBack;
-import static android.support.test.espresso.action.ViewActions.click;
-import static android.support.test.espresso.assertion.ViewAssertions.matches;
-import static android.support.test.espresso.intent.Intents.intended;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasAction;
-import static android.support.test.espresso.intent.matcher.IntentMatchers.hasComponent;
-import static android.support.test.espresso.matcher.ViewMatchers.isDisplayed;
-import static android.support.test.espresso.matcher.ViewMatchers.withId;
-import static android.support.test.espresso.matcher.ViewMatchers.withText;
+import static androidx.test.espresso.Espresso.onView;
+import static androidx.test.espresso.Espresso.pressBack;
+import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.assertion.ViewAssertions.matches;
+import static androidx.test.espresso.intent.Intents.intended;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasComponent;
+import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
+import static androidx.test.espresso.matcher.ViewMatchers.withId;
+import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import static com.android.managedprovisioning.common.LogoUtils.saveOrganisationLogo;
 import static com.android.managedprovisioning.model.CustomizationParams.DEFAULT_STATUS_BAR_COLOR_ID;
@@ -62,10 +62,12 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.Settings;
-import android.support.test.InstrumentationRegistry;
-import android.support.test.espresso.intent.rule.IntentsTestRule;
-import android.support.test.filters.SmallTest;
-import android.support.test.runner.lifecycle.Stage;
+import android.util.Log;
+
+import androidx.test.InstrumentationRegistry;
+import androidx.test.espresso.intent.rule.IntentsTestRule;
+import androidx.test.filters.SmallTest;
+import androidx.test.runner.lifecycle.Stage;
 
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.TestInstrumentationRunner;
@@ -293,12 +295,12 @@ public class ProvisioningActivityTest {
 
         // WHEN the activity is recreated with a saved instance state
         mActivityRule.runOnUiThread(() -> {
-                    Bundle bundle = new Bundle();
-                    InstrumentationRegistry.getInstrumentation()
-                            .callActivityOnSaveInstanceState(mActivityRule.getActivity(), bundle);
-                    InstrumentationRegistry.getInstrumentation()
-                            .callActivityOnCreate(mActivityRule.getActivity(), bundle);
-                });
+            Bundle bundle = new Bundle();
+            InstrumentationRegistry.getInstrumentation()
+                    .callActivityOnSaveInstanceState(mActivityRule.getActivity(), bundle);
+            InstrumentationRegistry.getInstrumentation()
+                    .callActivityOnCreate(mActivityRule.getActivity(), bundle);
+        });
 
         // THEN provisioning should not be initiated again
         verify(mProvisioningManager).maybeStartProvisioning(PROFILE_OWNER_PARAMS);
@@ -331,13 +333,17 @@ public class ProvisioningActivityTest {
         // THEN the UI should show an error dialog
         onView(withText(errorMsgId)).check(matches(isDisplayed()));
 
-        // WHEN clicking ok
-        onView(withId(android.R.id.button1))
-                .check(matches(withText(R.string.device_owner_error_ok)))
-                .perform(click());
+        // TODO(http://b/122511015): Replace retry with cleaner solution.
+        // Retry as the click action is unreliable
+        assertAndRetry(() -> {
+            // WHEN clicking ok
+            onView(withId(android.R.id.button1))
+                    .check(matches(withText(R.string.device_owner_error_ok)))
+                    .perform(click());
+            // THEN the activity should be finishing
+            assertTrue(mActivityRule.getActivity().isFinishing());
+        });
 
-        // THEN the activity should be finishing
-        assertTrue(mActivityRule.getActivity().isFinishing());
     }
 
     @Test
@@ -352,14 +358,37 @@ public class ProvisioningActivityTest {
         // THEN the UI should show an error dialog
         onView(withText(errorMsgId)).check(matches(isDisplayed()));
 
-        // WHEN clicking the ok button that says that factory reset is required
-        onView(withId(android.R.id.button1))
-                .check(matches(withText(R.string.reset)))
-                .perform(click());
+        // TODO(http://b/122511015): Replace retry with cleaner solution.
+        // Retry as the click action is unreliable
+        assertAndRetry(() -> {
+            // WHEN clicking the ok button that says that factory reset is required
+            onView(withId(android.R.id.button1))
+                    .check(matches(withText(R.string.reset)))
+                    .perform(click());
+            // THEN factory reset should be invoked
+            verify(mUtils, timeout(BROADCAST_TIMEOUT))
+                    .sendFactoryResetBroadcast(any(Context.class), anyString());
+        });
+    }
 
-        // THEN factory reset should be invoked
-        verify(mUtils, timeout(BROADCAST_TIMEOUT))
-                .sendFactoryResetBroadcast(any(Context.class), anyString());
+    private void assertAndRetry(int retries, Runnable runnable) throws Exception {
+        Exception exception = new IllegalArgumentException("Retries must be at least 1");
+        while (retries > 0) {
+            try {
+                runnable.run();
+                return;
+            } catch (Exception e) {
+                retries--;
+                Log.i("assertAndRetry",
+                        String.format("Assertion failed. %s retries remaining", retries), e);
+                exception = e;
+            }
+        }
+        throw exception;
+    }
+
+    private void assertAndRetry(Runnable runnable) throws Exception {
+        assertAndRetry(3, runnable);
     }
 
     @Test

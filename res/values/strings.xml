@@ -177,7 +177,7 @@
   <!-- Message of the error dialog when already provisioned. [CHAR LIMIT=NONE] -->
   <string name="device_already_set_up">Device is already set up</string>
   <!-- Message of the error dialog when setting up wifi failed. [CHAR LIMIT=NONE] -->
-  <string name="device_owner_error_wifi">Couldn\'t connect to Wi-Fi</string>
+  <string name="error_wifi">Couldn\'t connect to Wi-Fi</string>
   <!-- Message of the error dialog when passing factory reset protection fails. [CHAR LIMIT=NONE] -->
   <string name="device_has_reset_protection_contact_admin">Your device has reset protection turned on. For help, contact your admin.</string>
   <!-- Message informing the user that the factory reset protection partition is being erased [CHAR LIMIT=30] -->
@@ -185,13 +185,13 @@
   <!-- Progress screen text shown while erasing the factory reset protection partition [CHAR LIMIT=75] -->
   <string name="frp_clear_progress_text">Please wait...</string>
   <!-- Message of the error dialog when data integrity check fails. [CHAR LIMIT=NONE] -->
-  <string name="device_owner_error_hash_mismatch">Couldn\'t use the admin app due to a checksum error. For help, contact your admin.</string>
+  <string name="error_hash_mismatch">Couldn\'t use the admin app due to a checksum error. For help, contact your admin.</string>
   <!-- Message of the error dialog when device owner apk could not be downloaded. [CHAR LIMIT=NONE] -->
-  <string name="device_owner_error_download_failed">Couldn\'t download the admin app</string>
+  <string name="error_download_failed">Couldn\'t download the admin app</string>
   <!-- Message of the error dialog when package to install is invalid. [CHAR LIMIT=NONE] -->
-  <string name="device_owner_error_package_invalid">Can\'t use the admin app. It\'s missing components or corrupted. For help, contact your admin.</string>
+  <string name="error_package_invalid">Can\'t use the admin app. It\'s missing components or corrupted. For help, contact your admin.</string>
   <!-- Message of the error dialog when package could not be installed. [CHAR LIMIT=NONE] -->
-  <string name="device_owner_error_installation_failed">Couldn\'t install the admin app</string>
+  <string name="error_installation_failed">Couldn\'t install the admin app</string>
   <!-- Message of the cancel dialog. [CHAR LIMIT=NONE] -->
   <string name="profile_owner_cancel_message">Stop setting up?</string>
   <!-- Cancel button text of the cancel dialog. [CHAR LIMIT=45] -->
@@ -333,4 +333,37 @@
   <string name="work_profile_description">Your work apps will be kept in this profile and managed by your organization</string>
   <!-- [CHAR_LIMIT=NONE] Subtext below a full-screen title. This string explains that the user's work device will be kept secure and managed by their employer (referred to generally as "organization"). -->
   <string name="device_owner_description">This device will be kept secure and managed by your organization</string>
+
+  <string name="setup_provisioning_header">Preparing to set up work device\u2026</string>
+  <string name="setup_provisioning_header_description">Setting up admin app</string>
+
+  <!-- Transition screen strings -->
+  <string name="set_up_everything_else">Set up everything else</string>
+  <string name="now_lets_set_up_everything_else">Now, let\'s set up everything else</string>
+
+  <!-- Organization brand screen -->
+  <string name="brand_screen_header">Your organization will manage this phone</string>
+  <string name="brand_screen_subheader">The following app will be used to manage and monitor this phone</string>
+
+  <!-- Downloading screen -->
+  <string name="downloading_administrator_header">Downloading administrator application\u2026</string>
+
+  <!-- Work profile setup screens -->
+  <string name="work_profile_provisioning_accept_header">First, let\'s set up your work profile</string>
+  <string name="work_profile_provisioning_step_1_header">Use one phone for work &amp; play</string>
+  <string name="work_profile_provisioning_step_2_header">Separate work &amp; personal data</string>
+  <string name="work_profile_provisioning_step_3_header">Switch off when you\'re done</string>
+  <string name="work_profile_provisioning_progress_label">Creating work profile\u2026</string>
+
+  <!-- Fully managed device setup screens -->
+  <string name="fully_managed_device_provisioning_accept_header">Let\'s set up your work phone</string>
+  <string name="fully_managed_device_provisioning_step_1_header">Connect on the go</string>
+  <string name="fully_managed_device_provisioning_step_2_header">Work data is safe &amp; secure</string>
+  <string name="fully_managed_device_provisioning_step_3_header">Your organization will manage this phone</string>
+  <string name="fully_managed_device_provisioning_step_4_header">Find apps just for your organization</string>
+  <string name="fully_managed_device_provisioning_progress_label">Setting up your managed device\u2026</string>
+
+  <!-- Common to both work profile and fully managed device setup screens -->
+  <string name="device_provisioning_finished">Your phone is ready to go!</string>
+
 </resources>
