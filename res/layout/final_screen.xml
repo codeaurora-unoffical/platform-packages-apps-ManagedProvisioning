@@ -22,23 +22,17 @@
     android:id="@+id/setup_wizard_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:suwFooter="@layout/accept_and_continue_footer">
+    app:suwFooter="@layout/done_footer">
     <LinearLayout
+        style="@style/SuwContentFrame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-        <Button
-            android:layout_marginTop="@dimen/spacer_16"
-            android:id="@+id/show_terms_button"
-            android:text="@string/view_terms"
-            android:contentDescription="@string/read_terms"
-            style="@style/Provisioning2Theme.Button.Transparent"/>
         <ImageView
+            android:src="@drawable/enterprise_do_animation"
             android:id="@+id/animation"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/spacer_16"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/enterprise_wp_animation" />
+            android:layout_width="412dp"
+            android:layout_height="412dp"
+            android:layout_gravity="center_horizontal"/>
     </LinearLayout>
 </com.android.setupwizardlib.GlifLayout>
