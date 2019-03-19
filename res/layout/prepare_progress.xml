@@ -22,32 +22,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <LinearLayout
+        style="@style/SuwContentFrame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
-        <LinearLayout
-            style="@style/SuwContentFrame"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-            <com.android.setupwizardlib.view.RichTextView
-                android:id="@+id/description"
-                style="@style/SuwDescription.Glif"
-                android:layout_marginTop="0dp"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="?attr/suwGlifHeaderGravity"/>
-            <TextView
-                style="@style/SuwItemSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="?attr/suwGlifHeaderGravity"
-                android:text="@string/take_a_few_minutes"/>
-            <ImageView
-                android:id="@+id/animation"
-                android:layout_width="412dp"
-                android:layout_height="412dp"
-                android:layout_gravity="center_horizontal"/>
-        </LinearLayout>
+        <ImageView
+            android:src="@drawable/enterprise_do_animation"
+            android:id="@+id/animation"
+            android:layout_width="412dp"
+            android:layout_height="412dp"
+            android:layout_gravity="center_horizontal"/>
     </LinearLayout>
 </com.android.setupwizardlib.GlifLayout>

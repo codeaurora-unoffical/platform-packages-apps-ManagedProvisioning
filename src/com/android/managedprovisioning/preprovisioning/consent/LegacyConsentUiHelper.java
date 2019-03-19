@@ -188,7 +188,7 @@ class LegacyConsentUiHelper implements ConsentUiHelper {
                 customization.mainColor,
                 customization.statusBarColor);
 
-        setupAcceptAndContinueButton(customization);
+        setupAcceptAndContinueButton(customization, uiParams.isSilentProvisioning);
 
         mActivity.setTitle(titleResId);
 
@@ -203,16 +203,22 @@ class LegacyConsentUiHelper implements ConsentUiHelper {
         }
     }
 
-    private void setupAcceptAndContinueButton(CustomizationParams customization) {
+    private void setupAcceptAndContinueButton(CustomizationParams customization,
+            boolean isSilentProvisioning) {
         final Button nextButton = mActivity.findViewById(R.id.next_button);
-        nextButton.setOnClickListener(v -> {
-            ProvisionLogger.logi("Next button (next_button) is clicked.");
-            mCallback.nextAfterUserConsent();
-        });
+        nextButton.setOnClickListener(v -> onNextButtonClicked());
         nextButton.setBackgroundTintList(ColorStateList.valueOf(customization.mainColor));
         if (mUtils.isBrightColor(customization.mainColor)) {
             nextButton.setTextColor(mActivity.getColor(R.color.gray_button_text));
         }
+        if (isSilentProvisioning) {
+            onNextButtonClicked();
+        }
+    }
+
+    private void onNextButtonClicked() {
+        ProvisionLogger.logi("Next button (next_button) is clicked.");
+        mCallback.nextAfterUserConsent();
     }
 
     private void initiateUIProfileOwner(String termsHeaders, boolean isComp,
@@ -270,34 +276,22 @@ class LegacyConsentUiHelper implements ConsentUiHelper {
         shortInfoText.setMovementMethod(LinkMovementMethod.getInstance()); // make clicks work
         mContextMenuMaker.registerWithActivity(shortInfoText);
 
-        // if you have any questions, contact your device's provider
-        //
-        // TODO: refactor complex localized string assembly to an abstraction http://b/34288292
-        // there is a bit of copy-paste, and some details easy to forget (e.g. setMovementMethod)
-        if (customization.supportUrl != null) {
-            TextView info = mActivity.findViewById(R.id.device_owner_provider_info);
-            info.setVisibility(View.VISIBLE);
-            String deviceProvider = mActivity.getString(R.string.organization_admin);
-            String contactDeviceProvider = mActivity.getString(R.string.contact_device_provider,
-                deviceProvider);
-            SpannableString spannableString = new SpannableString(contactDeviceProvider);
-
-            Intent intent = WebActivity.createIntent(mActivity, customization.supportUrl,
-                customization.statusBarColor);
-            if (intent != null) {
-                ClickableSpan span = mClickableSpanFactory.create(intent);
-                int startIx = contactDeviceProvider.indexOf(deviceProvider);
-                int endIx = startIx + deviceProvider.length();
-                spannableString.setSpan(span, startIx, endIx, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                info.setMovementMethod(LinkMovementMethod.getInstance()); // make clicks work
-            }
-
-            info.setText(spannableString);
-            mContextMenuMaker.registerWithActivity(info);
-        }
+        handleSupportUrl(customization);
 
         // set up DPC icon and label
         setDpcIconAndLabel(packageName, packageIcon, customization.orgName);
+    }
+
+    private void handleSupportUrl(CustomizationParams customization) {
+        if (customization.supportUrl == null) {
+            return;
+        }
+        final TextView info = mActivity.findViewById(R.id.device_owner_provider_info);
+        final String deviceProvider = mActivity.getString(R.string.organization_admin);
+        final String contactDeviceProvider =
+                mActivity.getString(R.string.contact_device_provider, deviceProvider);
+        mUtils.handleSupportUrl(mActivity, customization, mClickableSpanFactory,
+                mContextMenuMaker, info, deviceProvider, contactDeviceProvider);
     }
 
     private Drawable getDeviceAdminIconDrawable(@Nullable String deviceAdminIconFilePath) {

@@ -34,6 +34,7 @@ import androidx.annotation.VisibleForTesting;
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.Utils;
+import com.android.managedprovisioning.finalization.FinalizationController;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.transition.TransitionActivity;
@@ -89,14 +90,21 @@ public class ProvisioningActivity extends AbstractProvisioningActivity {
     private void updateProvisioningFinalizedScreen() {
         final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
         layout.findViewById(R.id.footer).setVisibility(View.VISIBLE);
-        layout.findViewById(R.id.done_button).setOnClickListener(v -> {
-            if (mUtils.isAdminIntegratedFlow(mParams)) {
-                showPolicyComplianceScreen();
-            } else {
-                finishProvisioning();
-            }
-        });
+        layout.findViewById(R.id.done_button).setOnClickListener(v -> onDoneButtonClicked());
         layout.findViewById(R.id.provisioning_progress).setVisibility(View.GONE);
+
+        if (Utils.isSilentProvisioning(this, mParams)) {
+            onDoneButtonClicked();
+        }
+    }
+
+    private void onDoneButtonClicked() {
+        new FinalizationController(getApplicationContext()).provisioningInitiallyDone(mParams);
+        if (mUtils.isAdminIntegratedFlow(mParams)) {
+            showPolicyComplianceScreen();
+        } else {
+            finishProvisioning();
+        }
     }
 
     private void finishProvisioning() {

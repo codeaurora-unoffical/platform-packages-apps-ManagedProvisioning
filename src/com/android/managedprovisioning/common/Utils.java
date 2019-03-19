@@ -64,12 +64,20 @@ import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.storage.StorageManager;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
+import android.view.View;
+import android.widget.TextView;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.managedprovisioning.TrampolineActivity;
+import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.PackageDownloadInfo;
 import com.android.managedprovisioning.model.ProvisioningParams;
+import com.android.managedprovisioning.preprovisioning.WebActivity;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -283,7 +291,7 @@ public class Utils {
      *
      * @see DevicePolicyManagerService#isPackageTestOnly for more info
      */
-    public boolean isPackageTestOnly(PackageManager pm, String packageName, int userHandle) {
+    public static boolean isPackageTestOnly(PackageManager pm, String packageName, int userHandle) {
         if (TextUtils.isEmpty(packageName)) {
             return false;
         }
@@ -739,5 +747,63 @@ public class Utils {
         int attrColor = ta.getColor(0, 0);
         ta.recycle();
         return attrColor;
+    }
+
+    public void handleSupportUrl(Context context, CustomizationParams customizationParams,
+                ClickableSpanFactory clickableSpanFactory,
+                AccessibilityContextMenuMaker contextMenuMaker, TextView textView,
+                String deviceProvider, String contactDeviceProvider) {
+        if (customizationParams.supportUrl == null) {
+            return;
+        }
+        final SpannableString spannableString = new SpannableString(contactDeviceProvider);
+        final Intent intent = WebActivity.createIntent(
+                context, customizationParams.supportUrl, customizationParams.statusBarColor);
+        if (intent != null) {
+            final ClickableSpan span = clickableSpanFactory.create(intent);
+            final int startIx = contactDeviceProvider.indexOf(deviceProvider);
+            final int endIx = startIx + deviceProvider.length();
+            spannableString.setSpan(span, startIx, endIx, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            textView.setMovementMethod(LinkMovementMethod.getInstance()); // make clicks work
+        }
+
+        textView.setVisibility(View.VISIBLE);
+        textView.setText(spannableString);
+        contextMenuMaker.registerWithActivity(textView);
+    }
+
+    public static boolean isSilentProvisioningForTestingDeviceOwner(
+                Context context, ProvisioningParams params) {
+        final DevicePolicyManager dpm = context.getSystemService(DevicePolicyManager.class);
+        final ComponentName currentDeviceOwner =
+                dpm.getDeviceOwnerComponentOnCallingUser();
+        final ComponentName targetDeviceAdmin = params.deviceAdminComponentName;
+
+        switch (params.provisioningAction) {
+            case DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE:
+                return isPackageTestOnly(context, params)
+                        && currentDeviceOwner != null
+                        && targetDeviceAdmin != null
+                        && currentDeviceOwner.equals(targetDeviceAdmin);
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isSilentProvisioningForTestingManagedProfile(
+        Context context, ProvisioningParams params) {
+        return DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE.equals(
+                params.provisioningAction) && isPackageTestOnly(context, params);
+    }
+
+    public static boolean isSilentProvisioning(Context context, ProvisioningParams params) {
+        return isSilentProvisioningForTestingManagedProfile(context, params)
+                || isSilentProvisioningForTestingDeviceOwner(context, params);
+    }
+
+    private static boolean isPackageTestOnly(Context context, ProvisioningParams params) {
+        final UserManager userManager = context.getSystemService(UserManager.class);
+        return isPackageTestOnly(context.getPackageManager(),
+                params.inferDeviceAdminPackageName(), userManager.getUserHandle());
     }
 }
