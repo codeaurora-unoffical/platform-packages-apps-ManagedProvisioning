@@ -134,9 +134,8 @@ public class PreProvisioningController {
         mEncryptionController = checkNotNull(encryptionController,
                 "EncryptionController must not be null");
 
-        mDevicePolicyManager = (DevicePolicyManager) mContext.getSystemService(
-                Context.DEVICE_POLICY_SERVICE);
-        mUserManager = (UserManager) mContext.getSystemService(Context.USER_SERVICE);
+        mDevicePolicyManager = mContext.getSystemService(DevicePolicyManager.class);
+        mUserManager = mContext.getSystemService(UserManager.class);
         mPackageManager = mContext.getPackageManager();
         mActivityManager = (ActivityManager) mContext.getSystemService(Context.ACTIVITY_SERVICE);
         mKeyguardManager = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
@@ -238,6 +237,7 @@ public class PreProvisioningController {
          * {@link Intent} to launch the view terms screen.
          */
         public Intent viewTermsIntent;
+        public boolean isSilentProvisioning;
     }
 
     /**
@@ -263,7 +263,6 @@ public class PreProvisioningController {
         }
 
         // PO preconditions
-        boolean waitForUserDelete = false;
         if (isProfileOwnerProvisioning()) {
             // If there is already a managed profile, setup the profile deletion dialog.
             int existingManagedProfileUserId = mUtils.alreadyHasManagedProfile(mContext);
@@ -274,7 +273,7 @@ public class PreProvisioningController {
                         .getProfileOwnerNameAsUser(existingManagedProfileUserId);
                 mUi.showDeleteManagedProfileDialog(mdmPackageName, domainName,
                         existingManagedProfileUserId);
-                waitForUserDelete = true;
+                return;
             }
         }
 
@@ -307,20 +306,15 @@ public class PreProvisioningController {
         mTimeLogger.start();
         mProvisioningAnalyticsTracker.logPreProvisioningStarted(mContext, intent);
 
-        // as of now this is only true for COMP provisioning, where we already have a user consent
-        // since the DPC is DO already.
-        if (mParams.skipUserConsent || isSilentProvisioningForTestingDeviceOwner()
-                || isSilentProvisioningForTestingManagedProfile()) {
-            if (!waitForUserDelete) {
-                continueProvisioningAfterUserConsent();
-            }
-            return;
-        }
-
         if (mParams.isOrganizationOwnedProvisioning) {
             mUi.prepareAdminIntegratedFlow(mParams);
         } else {
-            showUserConsentScreen();
+            // skipUserConsent can only be set from a device owner provisioning to a work profile.
+            if (mParams.skipUserConsent || Utils.isSilentProvisioning(mContext, mParams)) {
+                continueProvisioningAfterUserConsent();
+            } else {
+                showUserConsentScreen();
+            }
         }
     }
 
@@ -357,6 +351,7 @@ public class PreProvisioningController {
         uiParams.isDeviceManaged = mDevicePolicyManager.isDeviceManaged();
         uiParams.packageInfo = packageInfo;
         uiParams.viewTermsIntent = createViewTermsIntent();
+        uiParams.isSilentProvisioning = Utils.isSilentProvisioning(mContext, mParams);
 
         mUi.initiateUi(uiParams);
     }
@@ -524,7 +519,7 @@ public class PreProvisioningController {
         // If isSilentProvisioningForTestingDeviceOwner returns true, the component must be
         // current device owner, and we can safely ignore isProvisioningAllowed as we don't call
         // setDeviceOwner.
-        if (isSilentProvisioningForTestingDeviceOwner()) {
+        if (Utils.isSilentProvisioningForTestingDeviceOwner(mContext, mParams)) {
             return true;
         }
 
@@ -623,32 +618,6 @@ public class PreProvisioningController {
         return !mParams.skipEncryption && mUtils.isEncryptionRequired();
     }
 
-    private boolean isSilentProvisioningForTestingDeviceOwner() {
-        final ComponentName currentDeviceOwner =
-                mDevicePolicyManager.getDeviceOwnerComponentOnCallingUser();
-        final ComponentName targetDeviceAdmin = mParams.deviceAdminComponentName;
-
-        switch (mParams.provisioningAction) {
-            case DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE:
-                return isPackageTestOnly()
-                        && currentDeviceOwner != null
-                        && targetDeviceAdmin != null
-                        && currentDeviceOwner.equals(targetDeviceAdmin);
-            default:
-                return false;
-        }
-    }
-
-    private boolean isSilentProvisioningForTestingManagedProfile() {
-        return DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE.equals(
-                mParams.provisioningAction) && isPackageTestOnly();
-    }
-
-    private boolean isPackageTestOnly() {
-        return mUtils.isPackageTestOnly(mContext.getPackageManager(),
-                mParams.inferDeviceAdminPackageName(), mUserManager.getUserHandle());
-    }
-
     /**
      * Returns whether the device is frp protected during setup wizard.
      */
@@ -743,17 +712,6 @@ public class PreProvisioningController {
         // We know that we can remove the managed profile because we checked
         // DevicePolicyManager.checkProvisioningPreCondition
         mUserManager.removeUserEvenWhenDisallowed(userProfileId);
-    }
-
-    /**
-     * See comment in place of usage. Check if we were in silent provisioning, got blocked, and now
-     * can resume.
-     */
-    public void checkResumeSilentProvisioning() {
-        if (mParams.skipUserConsent || isSilentProvisioningForTestingDeviceOwner()
-                || isSilentProvisioningForTestingManagedProfile()) {
-            continueProvisioningAfterUserConsent();
-        }
     }
 
     // TODO: review the use of async task for the case where the activity might have got killed
