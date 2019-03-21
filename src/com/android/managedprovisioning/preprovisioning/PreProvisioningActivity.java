@@ -38,7 +38,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
-import com.android.managedprovisioning.common.ClickableSpanFactory;
 import com.android.managedprovisioning.common.LogoUtils;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.SetupGlifLayoutActivity;
@@ -49,7 +48,7 @@ import com.android.managedprovisioning.preprovisioning.PreProvisioningController
 import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelperFactory;
 import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelper;
 import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelperCallback;
-import com.android.managedprovisioning.provisioning.AdminIntegratedFlowPrepareActivity;
+import com.android.managedprovisioning.provisioning.LandingActivity;
 import com.android.managedprovisioning.provisioning.ProvisioningActivity;
 
 public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
@@ -76,7 +75,6 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     private PreProvisioningController mController;
     private ControllerProvider mControllerProvider;
     private final AccessibilityContextMenuMaker mContextMenuMaker;
-    private ClickableSpanFactory mClickableSpanFactory;
     private ConsentUiHelper mConsentUiHelper;
 
     private static final String ERROR_DIALOG_RESET = "ErrorDialogReset";
@@ -87,8 +85,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
 
     @VisibleForTesting
     public PreProvisioningActivity(ControllerProvider controllerProvider,
-            AccessibilityContextMenuMaker contextMenuMaker,
-            Utils utils) {
+            AccessibilityContextMenuMaker contextMenuMaker, Utils utils) {
         super(utils);
         mControllerProvider = controllerProvider;
         mContextMenuMaker =
@@ -99,14 +96,13 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mClickableSpanFactory = new ClickableSpanFactory(getColor(R.color.blue));
         mController = mControllerProvider.getInstance(this);
         ProvisioningParams params = savedInstanceState == null ? null
                 : savedInstanceState.getParcelable(SAVED_PROVISIONING_PARAMS);
-        mController.initiateProvisioning(getIntent(), params, getCallingPackage());
         mConsentUiHelper = ConsentUiHelperFactory.getInstance(
                 /* activity */ this, /* contextMenuMaker */ mContextMenuMaker, /* callback */ this,
                 /* utils */ mUtils);
+        mController.initiateProvisioning(getIntent(), params, getCallingPackage());
     }
 
     @Override
@@ -233,10 +229,8 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
             case DELETE_MANAGED_PROFILE_DIALOG:
                 DeleteManagedProfileDialog d = (DeleteManagedProfileDialog) dialog;
                 mController.removeUser(d.getUserId());
-                // TODO: refactor as evil - logic should be less spread out
-                // Check if we are in the middle of silent provisioning and were got blocked by an
-                // existing user profile. If so, we can now resume.
-                mController.checkResumeSilentProvisioning();
+                mController.initiateProvisioning(getIntent(), /* cached params */ null,
+                        getCallingPackage());
                 break;
             case ERROR_DIALOG_RESET:
                 getUtils().sendFactoryResetBroadcast(this, "Error during preprovisioning");
@@ -322,10 +316,9 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
 
     @Override
     public void prepareAdminIntegratedFlow(ProvisioningParams params) {
-        Intent intent = new Intent(this, AdminIntegratedFlowPrepareActivity.class);
+        Intent intent = new Intent(this, LandingActivity.class);
         intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, params);
         startActivityForResult(intent, ADMIN_INTEGRATED_FLOW_PREPARE_REQUEST_CODE);
-        overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
     }
 
     @Override
