@@ -32,7 +32,7 @@
     <string name="admin_has_ability_to_monitor_device" msgid="8598573866079474861">"May kakayahan ang iyong admin na subaybayan at pamahalaan ang mga setting, pangkorporasyong access, app, pahintulot, at data na nauugnay sa device na ito, kasama ang aktibidad mo sa network, pati na rin ang lokasyon, history ng tawag, at history ng paghahanap ng contact ng device mo.<xliff:g id="LINE_BREAK">&lt;br&gt;&lt;br&gt;</xliff:g>Makipag-ugnayan sa iyong admin para sa higit pang impormasyon, kasama ang mga patakaran sa privacy ng organisasyon mo."</string>
     <string name="theft_protection_disabled_warning" msgid="3708092473574738478">"Upang magamit ang mga feature ng proteksyon laban sa pagnanakaw, dapat ay mayroon kang screen lock na protektado ng password para sa iyong device."</string>
     <string name="contact_your_admin_for_more_info" msgid="5959191345827902911">"Makipag-ugnayan sa iyong admin para sa higit pang impormasyon, kasama na ang mga patakaran sa privacy ng iyong organisasyon."</string>
-    <string name="learn_more_link" msgid="3012495805919550043">"Matuto nang higit pa"</string>
+    <string name="learn_more_link" msgid="3012495805919550043">"Matuto pa"</string>
     <string name="cancel_setup" msgid="2949928239276274745">"Kanselahin"</string>
     <string name="ok_setup" msgid="4593707675416137504">"Ok"</string>
     <string name="user_consent_msg" msgid="8820951802130353584">"Pahihintulutan ko"</string>
@@ -86,19 +86,14 @@
     <string name="couldnt_set_up_device" msgid="60699158233724802">"Hindi ma-set up ang device. Para sa tulong, makipag-ugnayan sa iyong admin."</string>
     <string name="contact_your_admin_for_help" msgid="8045606258802719235">"Makipag-ugnayan sa iyong admin para sa tulong"</string>
     <string name="device_already_set_up" msgid="507881934487140294">"Naka-set up na ang device"</string>
-    <!-- no translation found for error_wifi (1850288843966836571) -->
-    <skip />
+    <string name="error_wifi" msgid="1850288843966836571">"Hindi makakonekta sa Wi-Fi"</string>
     <string name="device_has_reset_protection_contact_admin" msgid="1221351721899290155">"Naka-on ang proteksyon sa pag-reset sa iyong device. Para sa tulong, makipag-ugnayan sa iyong admin."</string>
     <string name="frp_clear_progress_title" msgid="8628074089458234965">"Binubura"</string>
     <string name="frp_clear_progress_text" msgid="1740164332830598827">"Mangyaring maghintay..."</string>
-    <!-- no translation found for error_hash_mismatch (5899334454632791946) -->
-    <skip />
-    <!-- no translation found for error_download_failed (3274283629837019452) -->
-    <skip />
-    <!-- no translation found for error_package_invalid (5915763557848599459) -->
-    <skip />
-    <!-- no translation found for error_installation_failed (2282903750318407285) -->
-    <skip />
+    <string name="error_hash_mismatch" msgid="5899334454632791946">"Hindi magamit ang admin app dahil sa checksum error. Para sa tulong, makipag-ugnayan sa iyong admin."</string>
+    <string name="error_download_failed" msgid="3274283629837019452">"Hindi ma-download ang admin app"</string>
+    <string name="error_package_invalid" msgid="5915763557848599459">"Hindi magamit ang admin app. May nawawala itong mga bahagi o na-corrupt ito. Para sa tulong, makipag-ugnayan sa iyong admin."</string>
+    <string name="error_installation_failed" msgid="2282903750318407285">"Hindi ma-install ang admin app"</string>
     <string name="profile_owner_cancel_message" msgid="6868736915633023477">"Ihinto ang pagse-set up?"</string>
     <string name="profile_owner_cancel_cancel" msgid="4408725524311574891">"Hindi"</string>
     <string name="profile_owner_cancel_ok" msgid="5951679183850766029">"Oo"</string>
@@ -141,7 +136,7 @@
     <string name="setup_device" msgid="6725265673245816366">"I-set up ang iyong device"</string>
     <string name="setup_device_encryption" msgid="7852944465414197103">"I-set up ang iyong device. Pag-encrypt"</string>
     <string name="setup_device_progress" msgid="7035335208571175393">"I-set up ang iyong device. Ipinapakita ang pag-usad"</string>
-    <string name="learn_more_label" msgid="2723716758654655009">"Button na matuto nang higit pa"</string>
+    <string name="learn_more_label" msgid="2723716758654655009">"Button na matuto pa"</string>
     <string name="mdm_icon_label" msgid="3399134595549660561">"Icon ng <xliff:g id="ICON_LABEL">%1$s</xliff:g>"</string>
     <string name="section_heading" msgid="3924666803774291908">"Heading ng seksyong <xliff:g id="SECTION_HEADING">%1$s</xliff:g>."</string>
     <string name="section_content" msgid="8875502515704374394">"Content ng seksyong <xliff:g id="SECTION_HEADING">%1$s</xliff:g>: <xliff:g id="SECTION_CONTENT">%2$s</xliff:g>"</string>
@@ -163,42 +158,24 @@
     <string name="take_a_few_minutes" msgid="6282806501305322838">"Maaari itong abutin nang ilang minuto"</string>
     <string name="work_profile_description" msgid="8524116010729569213">"Ilalagay sa profile na ito ang iyong mga app sa trabaho at papamahalaan ito ng organisasyon mo"</string>
     <string name="device_owner_description" msgid="168013145812679664">"Ang device na ito ay pamamahalaan at pananatilihing secure ng iyong organisasyon"</string>
-    <!-- no translation found for setup_provisioning_header (4282483198266806271) -->
-    <skip />
-    <!-- no translation found for setup_provisioning_header_description (2567041263563823566) -->
-    <skip />
-    <!-- no translation found for set_up_everything_else (4407706086957916501) -->
-    <skip />
-    <!-- no translation found for now_lets_set_up_everything_else (2905102208584231894) -->
-    <skip />
-    <!-- no translation found for brand_screen_header (2285274890167238955) -->
-    <skip />
-    <!-- no translation found for brand_screen_subheader (7664792208784456436) -->
-    <skip />
-    <!-- no translation found for downloading_administrator_header (170628239085849025) -->
-    <skip />
-    <!-- no translation found for work_profile_provisioning_accept_header (462916780311392444) -->
-    <skip />
-    <!-- no translation found for work_profile_provisioning_step_1_header (7467365813079527467) -->
-    <skip />
-    <!-- no translation found for work_profile_provisioning_step_2_header (4859040856387342855) -->
-    <skip />
-    <!-- no translation found for work_profile_provisioning_step_3_header (8882448650237847724) -->
-    <skip />
-    <!-- no translation found for work_profile_provisioning_progress_label (1231406704277277662) -->
-    <skip />
-    <!-- no translation found for fully_managed_device_provisioning_accept_header (2295398352177393658) -->
-    <skip />
-    <!-- no translation found for fully_managed_device_provisioning_step_1_header (2757690609176001237) -->
-    <skip />
-    <!-- no translation found for fully_managed_device_provisioning_step_2_header (8132844082647382385) -->
-    <skip />
-    <!-- no translation found for fully_managed_device_provisioning_step_3_header (902047332190766019) -->
-    <skip />
-    <!-- no translation found for fully_managed_device_provisioning_step_4_header (5352443284257832617) -->
-    <skip />
-    <!-- no translation found for fully_managed_device_provisioning_progress_label (8748941226481336777) -->
-    <skip />
-    <!-- no translation found for device_provisioning_finished (4611825455360297074) -->
-    <skip />
+    <string name="setup_provisioning_header" msgid="4282483198266806271">"Naghahandang i-set up ang device sa trabaho…"</string>
+    <string name="setup_provisioning_header_description" msgid="2567041263563823566">"Sine-set up ang admin app"</string>
+    <string name="set_up_everything_else" msgid="4407706086957916501">"I-set up ang lahat ng iba pa"</string>
+    <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"Ngayon, i-set up natin ang lahat ng iba pa"</string>
+    <string name="brand_screen_header" msgid="2285274890167238955">"Papamahalaan ng iyong organisasyon ang teleponong ito"</string>
+    <string name="brand_screen_subheader" msgid="7664792208784456436">"Gagamitin ang sumusunod na app para pamahalaan at subaybayan ang teleponong ito"</string>
+    <string name="downloading_administrator_header" msgid="170628239085849025">"Dina-download ang application ng administrator…"</string>
+    <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"Una, i-set up natin ang iyong profile sa trabaho"</string>
+    <string name="work_profile_provisioning_step_1_header" msgid="7467365813079527467">"Gumamit ng isang telepono para sa trabaho at paglalaro"</string>
+    <string name="work_profile_provisioning_step_2_header" msgid="4924804885513620947">"Ihiwalay ang data ng trabaho sa personal na data"</string>
+    <string name="work_profile_provisioning_step_3_header" msgid="8882448650237847724">"I-off kapag tapos ka na"</string>
+    <string name="work_profile_provisioning_progress_label" msgid="1231406704277277662">"Ginagawa ang profile sa trabaho…"</string>
+    <string name="fully_managed_device_provisioning_accept_header" msgid="2295398352177393658">"I-set up natin ang iyong telepono sa trabaho"</string>
+    <string name="fully_managed_device_provisioning_step_1_header" msgid="2757690609176001237">"Kumonekta on the go"</string>
+    <string name="fully_managed_device_provisioning_step_2_header" msgid="6458057940777972531">"Ligtas at secure ang data ng trabaho"</string>
+    <string name="fully_managed_device_provisioning_step_3_header" msgid="902047332190766019">"Papamahalaan ng iyong organisasyon ang teleponong ito"</string>
+    <string name="fully_managed_device_provisioning_step_4_header" msgid="5352443284257832617">"Maghanap ng mga app para lang sa iyong organisasyon"</string>
+    <string name="fully_managed_device_provisioning_progress_label" msgid="8748941226481336777">"Sine-set up ang iyong pinapamahalaang device…"</string>
+    <string name="device_provisioning_finished" msgid="4611825455360297074">"Handa na ang iyong telepono!"</string>
+    <string name="done" msgid="7755227776955952318">"Tapos na"</string>
 </resources>
