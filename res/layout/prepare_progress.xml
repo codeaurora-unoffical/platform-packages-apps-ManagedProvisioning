@@ -19,37 +19,18 @@
 <com.android.setupwizardlib.GlifLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/setup_wizard_layout"
-    android:layout="@layout/suw_glif_blank_template"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-
-    <ScrollView
+    <LinearLayout
+        style="@style/SuwContentFrame"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fadeScrollbars="false">
-
-        <LinearLayout
-            android:id="@+id/intro_po_content"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical">
-
-                <include layout="@layout/intro_animation"/>
-            </FrameLayout>
-
-            <FrameLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical">
-
-                <include layout="@layout/intro_profile_owner_info_buttons"/>
-            </FrameLayout>
-        </LinearLayout>
-    </ScrollView>
+        android:orientation="vertical">
+        <ImageView
+            android:src="@drawable/enterprise_do_animation"
+            android:id="@+id/animation"
+            android:layout_width="412dp"
+            android:layout_height="412dp"
+            android:layout_gravity="center_horizontal"/>
+    </LinearLayout>
 </com.android.setupwizardlib.GlifLayout>
