@@ -32,6 +32,11 @@ import static com.android.managedprovisioning.model.ProvisioningParams.PROVISION
 import static com.android.managedprovisioning.model.ProvisioningParams.PROVISIONING_MODE_MANAGED_PROFILE;
 import static com.android.managedprovisioning.model.ProvisioningParams.PROVISIONING_MODE_MANAGED_PROFILE_ON_FULLY_NAMAGED_DEVICE;
 
+import android.annotation.WorkerThread;
+import android.os.Handler;
+import android.os.Looper;
+import com.android.managedprovisioning.R;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.accounts.AccountManagerFuture;
@@ -39,6 +44,7 @@ import android.accounts.AuthenticatorException;
 import android.accounts.OperationCanceledException;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.StringRes;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
@@ -69,11 +75,12 @@ import android.text.Spanned;
 import android.text.TextUtils;
 import android.text.method.LinkMovementMethod;
 import android.text.style.ClickableSpan;
-import android.view.View;
+import android.view.View.OnClickListener;
 import android.widget.TextView;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.managedprovisioning.TrampolineActivity;
+import com.android.managedprovisioning.common.RemoveAccountAsyncTask.RemoveAccountListener;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.PackageDownloadInfo;
 import com.android.managedprovisioning.model.ProvisioningParams;
@@ -87,6 +94,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.google.android.setupdesign.GlifLayout;
+import com.google.android.setupcompat.template.FooterBarMixin;
+import com.google.android.setupcompat.template.FooterButton;
+import com.google.android.setupcompat.template.FooterButton.ButtonType;
 
 /**
  * Class containing various auxiliary methods.
@@ -382,7 +394,19 @@ public class Utils {
     }
 
     /**
-     * Removes an account.
+     * Removes an account asynchronously.
+     *
+     * @see #removeAccount(Context, Account)
+     */
+    public void removeAccountAsync(Context context, Account accountToRemove,
+            RemoveAccountListener callback) {
+        new RemoveAccountAsyncTask(context, accountToRemove, this, callback).execute();
+    }
+
+    /**
+     * Removes an account synchronously.
+     *
+     * This method is blocking and must never be called from the main thread.
      *
      * <p>This removes the given account from the calling user's list of accounts.
      *
@@ -390,21 +414,24 @@ public class Utils {
      * @param account the account to be removed
      */
     // TODO: Add unit tests
-    public void removeAccount(Context context, Account account) {
+    @WorkerThread
+    void removeAccount(Context context, Account account) {
+        final AccountManager accountManager =
+                (AccountManager) context.getSystemService(Context.ACCOUNT_SERVICE);
+        final AccountManagerFuture<Bundle> bundle = accountManager.removeAccount(account,
+                null, null /* callback */, null /* handler */);
+        // Block to get the result of the removeAccount operation
         try {
-            AccountManager accountManager =
-                    (AccountManager) context.getSystemService(Context.ACCOUNT_SERVICE);
-            AccountManagerFuture<Bundle> bundle = accountManager.removeAccount(account,
-                    null, null /* callback */, null /* handler */);
-            // Block to get the result of the removeAccount operation
-            if (bundle.getResult().getBoolean(AccountManager.KEY_BOOLEAN_RESULT, false)) {
+            final Bundle result = bundle.getResult();
+            if (result.getBoolean(AccountManager.KEY_BOOLEAN_RESULT, /* default */ false)) {
                 ProvisionLogger.logw("Account removed from the primary user.");
             } else {
-                Intent removeIntent = (Intent) bundle.getResult().getParcelable(
-                        AccountManager.KEY_INTENT);
+                final Intent removeIntent = result.getParcelable(AccountManager.KEY_INTENT);
                 if (removeIntent != null) {
                     ProvisionLogger.logi("Starting activity to remove account");
-                    TrampolineActivity.startActivity(context, removeIntent);
+                    new Handler(Looper.getMainLooper()).post(() -> {
+                        TrampolineActivity.startActivity(context, removeIntent);
+                    });
                 } else {
                     ProvisionLogger.logw("Could not remove account from the primary user.");
                 }
@@ -754,6 +781,7 @@ public class Utils {
                 AccessibilityContextMenuMaker contextMenuMaker, TextView textView,
                 String deviceProvider, String contactDeviceProvider) {
         if (customizationParams.supportUrl == null) {
+            textView.setText(contactDeviceProvider);
             return;
         }
         final SpannableString spannableString = new SpannableString(contactDeviceProvider);
@@ -767,7 +795,6 @@ public class Utils {
             textView.setMovementMethod(LinkMovementMethod.getInstance()); // make clicks work
         }
 
-        textView.setVisibility(View.VISIBLE);
         textView.setText(spannableString);
         contextMenuMaker.registerWithActivity(textView);
     }
@@ -805,5 +832,31 @@ public class Utils {
         final UserManager userManager = context.getSystemService(UserManager.class);
         return isPackageTestOnly(context.getPackageManager(),
                 params.inferDeviceAdminPackageName(), userManager.getUserHandle());
+    }
+
+    public static FooterButton addNextButton(GlifLayout layout, @NonNull OnClickListener listener) {
+        return setPrimaryButton(layout, listener, ButtonType.NEXT, R.string.next);
+    }
+
+    public static FooterButton addDoneButton(GlifLayout layout, @NonNull OnClickListener listener) {
+        return setPrimaryButton(layout, listener, ButtonType.DONE, R.string.done);
+    }
+
+    public static FooterButton addAcceptAndContinueButton(GlifLayout layout,
+        @NonNull OnClickListener listener) {
+        return setPrimaryButton(layout, listener, ButtonType.NEXT, R.string.accept_and_continue);
+    }
+
+    private static FooterButton setPrimaryButton(GlifLayout layout, OnClickListener listener,
+        @ButtonType int buttonType, @StringRes int label) {
+        final FooterBarMixin mixin = layout.getMixin(FooterBarMixin.class);
+        final FooterButton primaryButton = new FooterButton.Builder(layout.getContext())
+            .setText(label)
+            .setListener(listener)
+            .setButtonType(buttonType)
+            .setTheme(R.style.SudGlifButton_Primary)
+            .build();
+        mixin.setPrimaryButton(primaryButton);
+        return primaryButton;
     }
 }
