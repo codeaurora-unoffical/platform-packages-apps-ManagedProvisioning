@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"የሥራ መገለጫ ውቅረት"</string>
+    <string name="app_label" msgid="1527793174155125990">"የሥራ ቅንብር"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"ውይ!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"የሥራ መገለጫን ያዋቅሩ"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"ድርጅትዎ ይህን መገለጫ ይቆጣጠራል፣ እና ደህንነቱን ይጠብቃል። መሣሪያዎ ላይ ያለውን የተቀረው ነገር እርስዎ ነዎት የሚቆጣጠሩት።"</string>
@@ -162,10 +162,12 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"የአስተዳዳሪ መተግበሪያን በማቀናበር ላይ"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"የተቀረውን ነገር ሁሉ ያቀናብሩ"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"አሁን የተቀረውን ነገር በሙሉ እናቀናብር"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"የእርስዎ ድርጅት ይህን መሣሪያ ያስተዳድራል"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"ይህ መሣሪያ የድርጅትዎ ነው"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"የሚከተለው መተግበሪያ ይህን ስልክ ለማቀናበር እና ለመከታተል ስራ ላይ ይውላል"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"ለሥራ ቅንብር በመዘጋጀት ላይ…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"መጀመሪያ የስራ መገለጫዎን እናቀናብረው"</string>
+    <!-- no translation found for work_profile_provisioning_accept_header_post_suw (1353127953275291089) -->
+    <skip />
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"የሥራ መተግበሪያዎች በእርስዎ የሥራ መገለጫ ውስጥ ይቀመጣሉ"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"ለቀኑ የሚበቃዎትን ያክል ከሠሩ በኋላ የሥራ መተግበሪያዎችን ላፍታ ያስቁሙ"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"በእርስዎ የሥራ መገለጫ ውስጥ ያለ ውሂብ ብቻ ለእርስዎ የአይቲ አስተዳዳሪ የሚታይ ይሆናል"</string>
