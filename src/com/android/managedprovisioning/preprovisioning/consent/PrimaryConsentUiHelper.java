@@ -15,8 +15,7 @@
  */
 package com.android.managedprovisioning.preprovisioning.consent;
 
-import static android.view.View.INVISIBLE;
-import static android.view.View.VISIBLE;
+import static com.android.internal.util.Preconditions.checkNotNull;
 
 import android.annotation.DrawableRes;
 import android.annotation.Nullable;
@@ -24,7 +23,6 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.ProvisionLogger;
@@ -34,7 +32,6 @@ import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.preprovisioning.PreProvisioningController.UiParams;
 import com.google.android.setupdesign.GlifLayout;
-import java.util.List;
 
 /**
  * Implements functionality for the consent screen.
@@ -75,7 +72,9 @@ class PrimaryConsentUiHelper implements ConsentUiHelper {
         int animationResId = 0;
         if (mUtils.isProfileOwnerAction(uiParams.provisioningAction)) {
             titleResId = R.string.setup_profile;
-            headerResId = R.string.work_profile_provisioning_accept_header;
+            headerResId = uiParams.isOrganizationOwnedProvisioning
+                    ? R.string.work_profile_provisioning_accept_header
+                    : R.string.work_profile_provisioning_accept_header_post_suw;
             animationResId = R.drawable.consent_animation_po;
         } else if (mUtils.isDeviceOwnerAction(uiParams.provisioningAction)) {
             titleResId = R.string.setup_device;
@@ -97,7 +96,7 @@ class PrimaryConsentUiHelper implements ConsentUiHelper {
         mActivity.setTitle(titleResId);
 
         // set up terms headers
-        setupViewTermsButton(uiParams.viewTermsIntent, uiParams.disclaimerHeadings);
+        setupViewTermsButton(uiParams.viewTermsIntent);
     }
 
     private void setupAnimation(@DrawableRes int animationResId) {
@@ -123,15 +122,9 @@ class PrimaryConsentUiHelper implements ConsentUiHelper {
         mCallback.nextAfterUserConsent();
     }
 
-    private void setupViewTermsButton(Intent showTermsIntent,
-            List<String> disclaimerHeadings) {
+    private void setupViewTermsButton(Intent showTermsIntent) {
         final View viewTermsButton = mActivity.findViewById(R.id.show_terms_button);
-        if (disclaimerHeadings.isEmpty()) {
-            viewTermsButton.setVisibility(INVISIBLE);
-        } else {
-            viewTermsButton.setVisibility(VISIBLE);
-            viewTermsButton.setOnClickListener(v -> mActivity.startActivity(showTermsIntent));
-            mTouchTargetEnforcer.enforce(viewTermsButton, (View) viewTermsButton.getParent());
-        }
+        viewTermsButton.setOnClickListener(v -> mActivity.startActivity(showTermsIntent));
+        mTouchTargetEnforcer.enforce(viewTermsButton, (View) viewTermsButton.getParent());
     }
 }
