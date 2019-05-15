@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"Configuración do perfil de traballo"</string>
+    <string name="app_label" msgid="1527793174155125990">"Configuración de traballo"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"Vaia!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"Configurar o perfil de traballo"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"A túa organización controla este perfil e manteno seguro. Ti controlas o resto do contido do dispositivo."</string>
@@ -99,7 +99,7 @@
     <string name="profile_owner_cancel_ok" msgid="5951679183850766029">"Si"</string>
     <string name="profile_owner_cancelling" msgid="5679573829145112822">"Cancelando…"</string>
     <string name="work_profile_setup_later_title" msgid="9069148190226279892">"Queres deter a configuración do perfil?"</string>
-    <string name="work_profile_setup_later_message" msgid="122069011117225292">"Podes configurar o perfil de traballo máis tarde na aplicación de xestión de dispositivos da túa organización"</string>
+    <string name="work_profile_setup_later_message" msgid="122069011117225292">"Podes configurar o perfil de traballo máis tarde na aplicación de administración de dispositivos da túa organización"</string>
     <string name="continue_button" msgid="7177918589510964446">"Continuar"</string>
     <string name="work_profile_setup_stop" msgid="6772128629992514750">"Deter"</string>
     <string name="dismiss" msgid="9009534756748565880">"Ignorar"</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"Configurando a aplicación do administrador"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"Configurar todo o demais"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"Agora configuremos todo o demais"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"A túa organización xestionará este dispositivo"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"Este dispositivo pertence á túa organización"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"A seguinte aplicación utilizarase para xestionar e supervisar este teléfono"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"Preparando dispositivo para a configuración do traballo…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"En primeiro lugar, configuremos o teu perfil de traballo"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"Configuremos o teu perfil de traballo"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"As aplicacións do traballo gárdanse no teu perfil de traballo"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"Pon en pausa as aplicacións do traballo cando remates a túa xornada laboral"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"Só se mostran os datos do teu perfil de traballo ao teu administrador de TI"</string>

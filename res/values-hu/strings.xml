@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"Munkaprofil beállítása"</string>
+    <string name="app_label" msgid="1527793174155125990">"Munkahelyi beállítás"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"Hoppá!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"Munkaprofil beállítása"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"Ezt a profilt szervezete kezeli, és gondoskodik annak biztonságáról. Az eszközön minden mást Ön kezel."</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"Rendszergazdai alkalmazás beállítása"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"Minden egyéb beállítása"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"Most pedig állítsunk be minden mást"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"Az Ön szervezete kezeli majd ezt az eszközt"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"Az eszköz a szervezet tulajdona"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"A következő alkalmazást a telefon kezelésére és figyelésére fogják használni"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"Felkészülés a munkahelyi használatra való beállításra…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"Először állítsuk be a munkahelyi profilját!"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"Munkaprofil beállítása"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"A munkahelyi alkalmazásokat a munkaprofil tárolja"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"Munkahelyi alkalmazások szüneteltetése a munkanap végén"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"A rendszergazda számára csak a munkaprofilban lévő adatok láthatók"</string>
