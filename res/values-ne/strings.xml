@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"कार्य प्रोफाइलको सेटअप"</string>
+    <string name="app_label" msgid="1527793174155125990">"कार्यस्थलको सेटअप"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"ओहो!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"कार्य प्रोफाइललाई सेटअप गर्नुहोस्"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"तपाईँको संगठनले यो प्रोफाइल नियन्त्रण र सुरक्षित राख्छ। तपाईँले तपाईँको उपकरणमा अरू सबै कुरा नियन्त्रण गर्नुहोस्।"</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"प्रशासक अनुप्रयोग सेटअप गर्दै"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"अन्य सबै कुराहरू सेटअप गर्नुहोस्"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"अब, अन्य सबै कुराहरू सेटअप गरौँ"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"तपाईंको सङ्गठनले यो यन्त्रको व्यवस्थापन गर्ने छ"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"यो यन्त्र तपाईंको सङ्गठनको स्वामित्वमा छ"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"यो फोनको व्यवस्थापन तथा अनुगमन गर्न निम्न अनुप्रयोगको उपयोग गरिने छ"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"कार्यस्थल सेटअप गर्न तयारी गर्दै…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"सर्वप्रथम, तपाईंको कार्य प्रोफाइल सेटअप गरौँ"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"सर्वप्रथम आफ्नो कार्य प्रोफाइल सेटअप गरौँ"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"कार्यस्थलसम्बन्धी अनुप्रयोगहरू तपाईंको कार्यसम्बन्धी प्रोफाइलमा राखिन्छन्"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"आफ्नो दिनभरिको काम पूरा भएपछि कार्यस्थलसम्बन्धी अनुप्रयोग पज गर्नुहोस्"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"तपाईंको कार्यसम्बन्धी प्रोफाइलमा रहेको डेटा मात्र तपाईंका IT व्यवस्थापकले देख्न सक्छन्"</string>

@@ -21,6 +21,7 @@ import static android.app.admin.DevicePolicyManager.ACTION_GET_PROVISIONING_MODE
 
 import static com.android.managedprovisioning.model.ProvisioningParams.PROVISIONING_MODE_FULLY_MANAGED_DEVICE_LEGACY;
 
+import android.annotation.IntDef;
 import android.annotation.Nullable;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -41,6 +42,7 @@ import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
 import com.android.managedprovisioning.common.LogoUtils;
 import com.android.managedprovisioning.common.ProvisionLogger;
+import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.SetupGlifLayoutActivity;
 import com.android.managedprovisioning.common.SimpleDialog;
 import com.android.managedprovisioning.common.Utils;
@@ -52,8 +54,13 @@ import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelperCa
 import com.android.managedprovisioning.provisioning.LandingActivity;
 import com.android.managedprovisioning.provisioning.ProvisioningActivity;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
         SimpleDialog.SimpleDialogListener, PreProvisioningController.Ui, ConsentUiHelperCallback {
+
+    private static final String KEY_ACTIVITY_STATE = "activity-state";
 
     private static final int ENCRYPT_DEVICE_REQUEST_CODE = 1;
     @VisibleForTesting
@@ -79,6 +86,18 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     private final AccessibilityContextMenuMaker mContextMenuMaker;
     private ConsentUiHelper mConsentUiHelper;
 
+    static final int STATE_PREPROVISIONING_INTIIALIZING = 1;
+    static final int STATE_PROVISIONING_STARTED = 2;
+    static final int STATE_PROVISIONING_FINALIZED = 3;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({STATE_PREPROVISIONING_INTIIALIZING,
+            STATE_PROVISIONING_STARTED,
+            STATE_PROVISIONING_FINALIZED})
+    private @interface PreProvisioningState {}
+
+    private @PreProvisioningState int mState;
+
     private static final String ERROR_DIALOG_RESET = "ErrorDialogReset";
 
     public PreProvisioningActivity() {
@@ -98,13 +117,20 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mState = savedInstanceState == null
+                ? STATE_PREPROVISIONING_INTIIALIZING
+                : savedInstanceState.getInt(KEY_ACTIVITY_STATE, STATE_PREPROVISIONING_INTIIALIZING);
+
         mController = mControllerProvider.getInstance(this);
-        ProvisioningParams params = savedInstanceState == null ? null
-                : savedInstanceState.getParcelable(SAVED_PROVISIONING_PARAMS);
         mConsentUiHelper = ConsentUiHelperFactory.getInstance(
-                /* activity */ this, /* contextMenuMaker */ mContextMenuMaker, /* callback */ this,
-                /* utils */ mUtils);
-        mController.initiateProvisioning(getIntent(), params, getCallingPackage());
+                /* activity */ this, /* contextMenuMaker */ mContextMenuMaker,
+                /* callback */ this, /* utils */ mUtils, mController.getSettingsFacade());
+        if (mState == STATE_PREPROVISIONING_INTIIALIZING) {
+            ProvisioningParams params = savedInstanceState == null ? null
+                    : savedInstanceState.getParcelable(SAVED_PROVISIONING_PARAMS);
+            mController.initiateProvisioning(getIntent(), params, getCallingPackage());
+        }
     }
 
     @Override
@@ -123,6 +149,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(SAVED_PROVISIONING_PARAMS, mController.getParams());
+        outState.putInt(KEY_ACTIVITY_STATE, mState);
     }
 
     @Override
@@ -134,6 +161,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
                 }
                 break;
             case PROVISIONING_REQUEST_CODE:
+                mState = STATE_PROVISIONING_FINALIZED;
                 setResult(resultCode);
                 finish();
                 break;
@@ -278,6 +306,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     }
 
     public void startProvisioning(int userId, ProvisioningParams params) {
+        mState = STATE_PROVISIONING_STARTED;
         Intent intent = new Intent(this, ProvisioningActivity.class);
         intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, params);
         startActivityForResultAsUser(intent, PROVISIONING_REQUEST_CODE, new UserHandle(userId));
@@ -292,6 +321,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
         intentPolicy.setPackage(adminPackage);
         final ActivityManager activityManager = getSystemService(ActivityManager.class);
         if (!activityManager.isLowRamDevice()
+                && !mController.getParams().isNfc
                 && intentGetMode.resolveActivity(getPackageManager()) != null
                 && intentPolicy.resolveActivity(getPackageManager()) != null) {
             mController.putExtrasIntoGetModeIntent(intentGetMode);

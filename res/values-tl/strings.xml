@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"Pag-setup ng profile sa trabaho"</string>
+    <string name="app_label" msgid="1527793174155125990">"Pag-set Up ng Trabaho"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"Oops!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"Mag-set up ng profile sa trabaho"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"Kinokontrol ng iyong organisasyon ang profile na ito at pinapanatili itong secure. Ikaw ang kumokontrol sa lahat ng iba pa sa iyong device."</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"Sine-set up ang admin app"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"I-set up ang lahat ng iba pa"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"Ngayon, i-set up natin ang lahat ng iba pa"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"Papamahalaan ng iyong organisasyon ang device na ito"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"Pagmamay-ari ng iyong organisasyon ang device na ito"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"Gagamitin ang sumusunod na app para pamahalaan at subaybayan ang teleponong ito"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"Naghahanda para sa pag-set up ng trabaho…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"Una, i-set up natin ang iyong profile sa trabaho"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"I-set up natin ang iyong profile sa trabaho"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"Pinapanatili sa iyong profile sa trabaho ang mga app para sa trabaho"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"I-pause ang mga app para sa trabaho kapag tapos ka na sa araw na ito"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"Ang data lang sa iyong profile sa trabaho ang makikita ng IT admin mo"</string>
