@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"အလုပ်ပရိုဖိုင် စနစ်ထည့်သွင်းမှု"</string>
+    <string name="app_label" msgid="1527793174155125990">"အလုပ် စီစဉ်သတ်မှတ်ခြင်း"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"အူးပ်စ်!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"အလုပ်ပရိုဖိုင်ကို စနစ်ထည့်သွင်းမှုပြုလုပ်ပါ"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"သင်၏ အဖွဲ့အစည်းက ဒီပရိုဖိုင်ကို ထိန်းချုပ်လျက် လုံခြုံအောင် ထားရှိပါသည်။ သင်သည် သင့် ကိရိယာ ထဲက ကျန်အရာများကို ထိန်းချုပ်ပါသည်။"</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"စီမံခန့်ခွဲသူအက်ပ် စနစ်ထည့်သွင်းနေသည်"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"အားလုံးကို စနစ်ထည့်သွင်းရန်"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"အားလုံးကို စနစ်ထည့်သွင်းလိုက်ရအောင်"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"သင့်အဖွဲ့အစည်းက ဤစက်ပစ္စည်းကို စီမံခန့်ခွဲပါမည်"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"ဤစက်ကို သင့်အဖွဲ့အစည်းက ပိုင်ဆိုင်သည်"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"အောက်ပါအက်ပ် အသုံးပြု၍ ဤဖုန်းကို စီမံခန့်ခွဲခြင်း၊ စောင့်ကြည့်ခြင်းတို့ ပြုလုပ်ပါမည်"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"အလုပ်ဆိုင်ရာ စနစ်ထည့်သွင်းမှုအတွက် အသင့်ပြင်နေသည်…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"သင့်အလုပ်ပရိုဖိုင်ကို အရင် စနစ်ထည့်သွင်းရအောင်"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"သင့်အလုပ်ပရိုဖိုင်ကို စနစ်ထည့်သွင်းကြပါစို့"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"အလုပ်သုံးအက်ပ်များကို သင့်အလုပ်ပရိုဖိုင်တွင် သိမ်းထားသည်"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"တစ်နေ့တာအပြီးတွင် အလုပ်သုံးအက်ပ်များကို ခဏရပ်နိုင်သည်"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"သင့်အလုပ်ပရိုဖိုင်အတွင်းရှိ ဒေတာများကိုသာ သင်၏ IT စီမံခန့်ခွဲသူက မြင်ရပါသည်"</string>

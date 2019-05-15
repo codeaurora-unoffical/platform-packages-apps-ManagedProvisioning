@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"Nastavení pracovního profilu"</string>
+    <string name="app_label" msgid="1527793174155125990">"Pracovní nastavení"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"Jejda!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"Nastavení pracovního profilu"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"Tento profil řídí a zabezpečuje vaše společnost. Vše ostatní v tomto zařízení máte pod kontrolou vy."</string>
@@ -68,8 +68,8 @@
     <string name="progress_data_process" msgid="1707745321954672971">"Zpracovávání dat nastavení…"</string>
     <string name="progress_connect_to_wifi" msgid="472251154628863539">"Připojování k síti Wi-Fi…"</string>
     <string name="progress_connect_to_mobile_network" msgid="3852054186860657088">"Připojování k mobilní síti…"</string>
-    <string name="progress_download" msgid="3522436271691064624">"Stahování administrátorské aplikace…"</string>
-    <string name="progress_install" msgid="2258045670385866183">"Probíhá instalace administrátorské aplikace…"</string>
+    <string name="progress_download" msgid="3522436271691064624">"Stahování aplikace pro správu…"</string>
+    <string name="progress_install" msgid="2258045670385866183">"Probíhá instalace aplikace pro správu…"</string>
     <string name="progress_delete_non_required_apps" msgid="7633458399262691256">"Odstraňování nechtěných systémových aplikací…"</string>
     <string name="progress_finishing_touches" msgid="9037776404089697198">"Provádění posledních úprav…"</string>
     <string name="progress_set_owner" msgid="8214062820093757961">"Nastavování vlastníka zařízení…"</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"Nastavování aplikace pro správu"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"Nastavit všechno ostatní"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"Teď nastavíme všechno ostatní"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"Toto zařízení bude spravovat vaše organizace"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"Toto zařízení patří vaší organizaci"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"Tento telefon bude spravován a sledován pomocí následující aplikace"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"Příprava na nastavení pro práci…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"Nejdříve nastavíme váš pracovní profil"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"Teď nastavíme váš pracovní profil"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"Pracovní aplikace jsou uložené v pracovním profilu"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"Až budete mít hotovo, pracovní aplikace pozastavte"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"Administrátor IT vidí pouze data v pracovním profilu"</string>

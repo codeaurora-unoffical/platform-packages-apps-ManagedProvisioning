@@ -28,6 +28,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.AnimatedVectorDrawable;
+import android.os.Bundle;
 import android.os.UserHandle;
 import android.view.View;
 import android.widget.ImageView;
@@ -41,6 +42,7 @@ import com.android.managedprovisioning.common.RepeatingVectorAnimation;
 import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.finalization.FinalizationController;
+import com.android.managedprovisioning.finalization.UserProvisioningStateHelper;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.AnimationComponents;
@@ -93,15 +95,26 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     private TransitionAnimationHelper mTransitionAnimationHelper;
     private RepeatingVectorAnimation mRepeatingVectorAnimation;
     private FooterButton mNextButton;
+    private UserProvisioningStateHelper mUserProvisioningStateHelper;
 
     public ProvisioningActivity() {
-        this(null, new Utils());
+        super(new Utils());
     }
 
     @VisibleForTesting
-    public ProvisioningActivity(ProvisioningManager provisioningManager, Utils utils) {
+    public ProvisioningActivity(ProvisioningManager provisioningManager, Utils utils,
+                UserProvisioningStateHelper userProvisioningStateHelper) {
         super(utils);
         mProvisioningManager = provisioningManager;
+        mUserProvisioningStateHelper = userProvisioningStateHelper;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (mUserProvisioningStateHelper == null) {
+            mUserProvisioningStateHelper = new UserProvisioningStateHelper(this);
+        }
     }
 
     @Override
@@ -130,21 +143,20 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     }
 
     private void updateProvisioningFinalizedScreen() {
-        final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
-        layout.findViewById(R.id.provisioning_progress).setVisibility(View.GONE);
-        mNextButton.setVisibility(View.VISIBLE);
-
-        if (mParams.skipEducationScreens) {
-            endSpinnerAnimation();
-            layout.findViewById(R.id.animation).setVisibility(View.INVISIBLE);
+        if (!mParams.skipEducationScreens) {
+            final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
+            layout.findViewById(R.id.provisioning_progress).setVisibility(View.GONE);
+            mNextButton.setVisibility(View.VISIBLE);
         }
-        if (Utils.isSilentProvisioning(this, mParams)) {
+
+        if (mParams.skipEducationScreens || Utils.isSilentProvisioning(this, mParams)) {
             onNextButtonClicked();
         }
     }
 
     private void onNextButtonClicked() {
-        new FinalizationController(getApplicationContext()).provisioningInitiallyDone(mParams);
+        new FinalizationController(getApplicationContext(), mUserProvisioningStateHelper)
+                .provisioningInitiallyDone(mParams);
         if (mUtils.isAdminIntegratedFlow(mParams)) {
             if (mParams.provisioningAction.equals(ACTION_PROVISION_MANAGED_PROFILE)
                     && mParams.accountToMigrate != null && !mParams.keepAccountMigrated) {

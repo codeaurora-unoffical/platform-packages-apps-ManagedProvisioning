@@ -19,7 +19,7 @@
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
-    <string name="app_label" msgid="2400883737290705700">"කාර්යාල පැතිකඩ පිහිටුවීම"</string>
+    <string name="app_label" msgid="1527793174155125990">"කාර්යාල සැකසීම"</string>
     <string name="provisioning_error_title" msgid="6320515739861578118">"අපොයි!"</string>
     <string name="setup_work_profile" msgid="1468934631731845267">"කාර්යාල පැතිකඩ පිහිටුවන්න"</string>
     <string name="company_controls_workspace" msgid="2808025277267917221">"ඔබගේ සංවිධානය මෙම පැතිකඩ පාලනය කරයි සහ එය ආරක්ෂිතව තබයි. ඔබගේ උපාංගයේ අනෙක් සියලු ඔබ පාලනය කරයි."</string>
@@ -162,10 +162,11 @@
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"පරිපාලක යෙදුම සැකසීම"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"අනෙකුත් සියල්ල සකසන්න"</string>
     <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"දැන්, අනෙකුත් සියල්ල සකසමු"</string>
-    <string name="brand_screen_header" msgid="5415267581015331233">"ඔබේ සංවිධානය මෙම උපාංගය කළමනා කරයි"</string>
+    <string name="brand_screen_header" msgid="8865808542690116648">"මෙම උපාංගය ඔබේ සංවිධානයට අයත් වේ"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"මෙම දුරකථනය කළමනා කිරීමටත් නිරීක්‍ෂණ කිරීමටත් පහත සඳහන් යෙදුම භාවිත කෙරේ"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"කාර්යාල සැකසීම සඳහා සූදානම් වේ…"</string>
     <string name="work_profile_provisioning_accept_header" msgid="462916780311392444">"පළමුව, ඔබේ වැඩ පැතිකඩ සකසමු"</string>
+    <string name="work_profile_provisioning_accept_header_post_suw" msgid="1353127953275291089">"අපි ඔබේ වැඩ පැතිකඩ පිහිටුවමු"</string>
     <string name="work_profile_provisioning_step_1_header" msgid="7914961694921466366">"කාර්යාල යෙදුම් ඔබේ කාර්යාල පැතිකඩේ තබනු ලැබේ"</string>
     <string name="work_profile_provisioning_step_2_header" msgid="6001172190404670248">"ඔබ දවසේ වැඩ අවසන් කළ විට කාර්යාල යෙදුම් විරාම ගන්වන්න"</string>
     <string name="work_profile_provisioning_step_3_header" msgid="7495564624887776704">"ඔබේ කාර්යාල පැතිකඩේ ඇති දත්ත පමණක් ඔබේ තොරතුරු තාක්‍ෂණ පරිපාලකයාට පමණක් දෘශ්‍යමාන වෙති"</string>

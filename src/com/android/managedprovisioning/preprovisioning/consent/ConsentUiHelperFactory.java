@@ -18,6 +18,7 @@ package com.android.managedprovisioning.preprovisioning.consent;
 import android.app.Activity;
 import android.content.pm.PackageManager;
 import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
+import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.Utils;
 
 /**
@@ -25,8 +26,9 @@ import com.android.managedprovisioning.common.Utils;
  */
 public class ConsentUiHelperFactory {
     public static ConsentUiHelper getInstance(
-            Activity activity, AccessibilityContextMenuMaker contextMenuMaker,
-            ConsentUiHelperCallback callback, Utils utils) {
+        Activity activity, AccessibilityContextMenuMaker contextMenuMaker,
+        ConsentUiHelperCallback callback, Utils utils,
+        SettingsFacade settingsFacade) {
         if (shouldShowLegacyUi(activity)) {
             return new LegacyConsentUiHelper(activity, contextMenuMaker, callback, utils);
         } else {

@@ -80,7 +80,6 @@ import android.widget.TextView;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.managedprovisioning.TrampolineActivity;
-import com.android.managedprovisioning.common.RemoveAccountAsyncTask.RemoveAccountListener;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.PackageDownloadInfo;
 import com.android.managedprovisioning.model.ProvisioningParams;
@@ -522,10 +521,10 @@ public class Utils {
      * Only QR, cloud enrollment and NFC are owned by organization.
      */
     public boolean isOrganizationOwnedProvisioning(Intent intent) {
-        if (intent.getAction() == ACTION_NDEF_DISCOVERED) {
+        if (ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
             return true;
         }
-        if (intent.getAction() != ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE) {
+        if (!ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE.equals(intent.getAction())) {
             return false;
         }
         //  Do additional check under ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE
