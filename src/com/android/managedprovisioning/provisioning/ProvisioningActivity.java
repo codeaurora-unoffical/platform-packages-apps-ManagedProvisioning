@@ -20,26 +20,42 @@ import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PRO
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_PROVISIONING_ACTIVITY_TIME_MS;
 
 import android.Manifest.permission;
+import android.annotation.IntDef;
 import android.app.Activity;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.drawable.AnimatedVectorDrawable;
+import android.os.Bundle;
 import android.os.UserHandle;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.annotation.VisibleForTesting;
 import com.android.managedprovisioning.R;
+import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
+import com.android.managedprovisioning.common.ClickableSpanFactory;
 import com.android.managedprovisioning.common.ProvisionLogger;
+import com.android.managedprovisioning.common.RepeatingVectorAnimation;
+import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.finalization.FinalizationController;
+import com.android.managedprovisioning.finalization.UserProvisioningStateHelper;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.ProvisioningParams;
+import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.AnimationComponents;
+import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.TransitionAnimationCallback;
 import com.android.managedprovisioning.transition.TransitionActivity;
-import com.android.setupwizardlib.GlifLayout;
+import com.google.android.setupdesign.GlifLayout;
+import com.google.android.setupcompat.template.FooterButton;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Progress activity shown whilst provisioning is ongoing.
@@ -48,20 +64,57 @@ import java.util.List;
  * {@link ProvisioningManager}. It shows progress updates as provisioning progresses and handles
  * showing of cancel and error dialogs.</p>
  */
-public class ProvisioningActivity extends AbstractProvisioningActivity {
+public class ProvisioningActivity extends AbstractProvisioningActivity
+        implements TransitionAnimationCallback {
     private static final int POLICY_COMPLIANCE_REQUEST_CODE = 1;
     private static final int TRANSITION_ACTIVITY_REQUEST_CODE = 2;
     private static final int RESULT_CODE_ADD_PERSONAL_ACCOUNT = 120;
+
+    static final int PROVISIONING_MODE_WORK_PROFILE = 1;
+    static final int PROVISIONING_MODE_FULLY_MANAGED_DEVICE = 2;
+    static final int PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE = 3;
+
+    @IntDef(prefix = { "PROVISIONING_MODE_" }, value = {
+        PROVISIONING_MODE_WORK_PROFILE,
+        PROVISIONING_MODE_FULLY_MANAGED_DEVICE,
+        PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    @interface ProvisioningMode {}
+
+    private static final Map<Integer, Integer> PROVISIONING_MODE_TO_PROGRESS_LABEL =
+            Collections.unmodifiableMap(new HashMap<Integer, Integer>() {{
+                put(PROVISIONING_MODE_WORK_PROFILE,
+                        R.string.work_profile_provisioning_progress_label);
+                put(PROVISIONING_MODE_FULLY_MANAGED_DEVICE,
+                        R.string.fully_managed_device_provisioning_progress_label);
+                put(PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE,
+                        R.string.fully_managed_device_provisioning_progress_label);
+            }});
+
     private TransitionAnimationHelper mTransitionAnimationHelper;
+    private RepeatingVectorAnimation mRepeatingVectorAnimation;
+    private FooterButton mNextButton;
+    private UserProvisioningStateHelper mUserProvisioningStateHelper;
 
     public ProvisioningActivity() {
-        this(null, new Utils());
+        super(new Utils());
     }
 
     @VisibleForTesting
-    public ProvisioningActivity(ProvisioningManager provisioningManager, Utils utils) {
+    public ProvisioningActivity(ProvisioningManager provisioningManager, Utils utils,
+                UserProvisioningStateHelper userProvisioningStateHelper) {
         super(utils);
         mProvisioningManager = provisioningManager;
+        mUserProvisioningStateHelper = userProvisioningStateHelper;
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (mUserProvisioningStateHelper == null) {
+            mUserProvisioningStateHelper = new UserProvisioningStateHelper(this);
+        }
     }
 
     @Override
@@ -83,28 +136,48 @@ public class ProvisioningActivity extends AbstractProvisioningActivity {
         // TODO: call this for the new flow after new NFC flow has been added
         // maybeLaunchNfcUserSetupCompleteIntent();
 
-        updateProvisioningFinalizedScreen();
+        if (mParams.skipEducationScreens || mTransitionAnimationHelper.areAllTransitionsShown()) {
+            updateProvisioningFinalizedScreen();
+        }
         mState = STATE_PROVISIONING_FINALIZED;
     }
 
     private void updateProvisioningFinalizedScreen() {
-        final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
-        layout.findViewById(R.id.footer).setVisibility(View.VISIBLE);
-        layout.findViewById(R.id.done_button).setOnClickListener(v -> onDoneButtonClicked());
-        layout.findViewById(R.id.provisioning_progress).setVisibility(View.GONE);
+        if (!mParams.skipEducationScreens) {
+            final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
+            layout.findViewById(R.id.provisioning_progress).setVisibility(View.GONE);
+            mNextButton.setVisibility(View.VISIBLE);
+        }
 
-        if (Utils.isSilentProvisioning(this, mParams)) {
-            onDoneButtonClicked();
+        if (mParams.skipEducationScreens || Utils.isSilentProvisioning(this, mParams)) {
+            onNextButtonClicked();
         }
     }
 
-    private void onDoneButtonClicked() {
-        new FinalizationController(getApplicationContext()).provisioningInitiallyDone(mParams);
+    private void onNextButtonClicked() {
+        new FinalizationController(getApplicationContext(), mUserProvisioningStateHelper)
+                .provisioningInitiallyDone(mParams);
         if (mUtils.isAdminIntegratedFlow(mParams)) {
-            showPolicyComplianceScreen();
+            if (mParams.provisioningAction.equals(ACTION_PROVISION_MANAGED_PROFILE)
+                    && mParams.accountToMigrate != null && !mParams.keepAccountMigrated) {
+                mUtils.removeAccountAsync(this, mParams.accountToMigrate, this::postAccountRemove);
+            } else {
+                postAccountRemove();
+            }
         } else {
             finishProvisioning();
         }
+    }
+
+    private void postAccountRemove() {
+        enableGlobalFlags();
+        showPolicyComplianceScreen();
+    }
+
+    private void enableGlobalFlags() {
+        final SettingsFacade settingsFacade = new SettingsFacade();
+        settingsFacade.setUserSetupCompleted(this, UserHandle.USER_SYSTEM);
+        settingsFacade.setDeviceProvisioned(this);
     }
 
     private void finishProvisioning() {
@@ -153,7 +226,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity {
                     }
                 } else {
                     error(/* titleId */ R.string.cant_set_up_device,
-                            /* messageId */ R.string.cant_set_up_device,
+                            /* messageId */ R.string.contact_your_admin_for_help,
                             /* resetRequired = */ true);
                 }
                 break;
@@ -210,6 +283,10 @@ public class ProvisioningActivity extends AbstractProvisioningActivity {
 
     @Override
     protected void decideCancelProvisioningDialog() {
+        if (mState == STATE_PROVISIONING_FINALIZED && !mParams.isOrganizationOwnedProvisioning) {
+            return;
+        }
+
         if (getUtils().isDeviceOwnerAction(mParams.provisioningAction)
                 || mParams.isOrganizationOwnedProvisioning) {
             showCancelProvisioningDialog(/* resetRequired = */true);
@@ -221,29 +298,28 @@ public class ProvisioningActivity extends AbstractProvisioningActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        startTransitionAnimation();
+        if (mParams.skipEducationScreens) {
+            startSpinnerAnimation();
+        } else {
+            startTransitionAnimation();
+        }
     }
 
     @Override
     protected void onStop() {
         super.onStop();
-        endTransitionAnimation();
+        if (mParams.skipEducationScreens) {
+            endSpinnerAnimation();
+        } else {
+            endTransitionAnimation();
+        }
     }
 
-    private void startTransitionAnimation() {
-        final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
-        final TextView header = layout.findViewById(R.id.suw_layout_title);
-        final ImageView drawable = layout.findViewById(R.id.provisioning_progress_suw_layout_image);
-        final boolean isProfileOwnerAction =
-                mUtils.isProfileOwnerAction(mParams.provisioningAction);
-        mTransitionAnimationHelper =
-            new TransitionAnimationHelper(isProfileOwnerAction, header, drawable);
-        mTransitionAnimationHelper.start();
-    }
-
-    private void endTransitionAnimation() {
-        mTransitionAnimationHelper.clean();
-        mTransitionAnimationHelper = null;
+    @Override
+    public void onAllTransitionsShown() {
+        if (mState == STATE_PROVISIONING_FINALIZED) {
+            updateProvisioningFinalizedScreen();
+        }
     }
 
     @Override
@@ -259,14 +335,101 @@ public class ProvisioningActivity extends AbstractProvisioningActivity {
         setTitle(titleResId);
 
         final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
-        layout.findViewById(R.id.footer).setVisibility(View.GONE);
+        setupEducationViews(layout);
 
-        final int progressLabelResId = isPoProvisioning
-                ? R.string.work_profile_provisioning_progress_label
-                : R.string.fully_managed_device_provisioning_progress_label;
-        final TextView progressLabel = layout.findViewById(R.id.provisioning_progress_label);
-        progressLabel.setText(progressLabelResId);
+        mNextButton = Utils.addNextButton(layout, v -> onNextButtonClicked());
+        mNextButton.setVisibility(View.INVISIBLE);
 
-        layout.findViewById(R.id.provisioning_progress).setVisibility(View.VISIBLE);
+        handleSupportUrl(layout, customizationParams);
+    }
+
+    private void setupEducationViews(GlifLayout layout) {
+        final TextView header = layout.findViewById(R.id.suc_layout_title);
+        header.setTextColor(getColorStateList(R.color.header_text_color));
+
+        final int progressLabelResId =
+                PROVISIONING_MODE_TO_PROGRESS_LABEL.get(getProvisioningMode());
+        final TextView progressLabel = layout.findViewById(R.id.provisioning_progress);
+        if (mParams.skipEducationScreens) {
+            header.setText(progressLabelResId);
+            progressLabel.setVisibility(View.INVISIBLE);
+            layout.findViewById(R.id.subheader).setVisibility(View.INVISIBLE);
+            layout.findViewById(R.id.provider_info).setVisibility(View.INVISIBLE);
+        } else {
+            progressLabel.setText(progressLabelResId);
+            progressLabel.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void setupTransitionAnimationHelper(GlifLayout layout) {
+        final TextView header = layout.findViewById(R.id.suc_layout_title);
+        final TextView subHeader = layout.findViewById(R.id.subheader);
+        final ImageView drawable = layout.findViewById(R.id.animation);
+        final TextView providerInfo = layout.findViewById(R.id.provider_info);
+        final int provisioningMode = getProvisioningMode();
+        final AnimationComponents animationComponents =
+                new AnimationComponents(header, subHeader, drawable, providerInfo);
+        mTransitionAnimationHelper =
+                new TransitionAnimationHelper(provisioningMode, animationComponents, this);
+    }
+
+    private @ProvisioningMode int getProvisioningMode() {
+        int provisioningMode = 0;
+        final boolean isProfileOwnerAction =
+                mUtils.isProfileOwnerAction(mParams.provisioningAction);
+        if (isProfileOwnerAction) {
+            if (getSystemService(DevicePolicyManager.class).isDeviceManaged()) {
+                provisioningMode = PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE;
+            } else {
+                provisioningMode = PROVISIONING_MODE_WORK_PROFILE;
+            }
+        } else if (mUtils.isDeviceOwnerAction(mParams.provisioningAction)) {
+            provisioningMode = PROVISIONING_MODE_FULLY_MANAGED_DEVICE;
+        }
+        return provisioningMode;
+    }
+
+    private void handleSupportUrl(GlifLayout layout, CustomizationParams customization) {
+        final TextView info = layout.findViewById(R.id.provider_info);
+        final String deviceProvider = getString(R.string.organization_admin);
+        final String contactDeviceProvider =
+                getString(R.string.contact_device_provider, deviceProvider);
+        final ClickableSpanFactory spanFactory =
+                new ClickableSpanFactory(getColor(R.color.blue_text));
+        mUtils.handleSupportUrl(this, customization, spanFactory,
+                new AccessibilityContextMenuMaker(this), info, deviceProvider,
+                contactDeviceProvider);
+    }
+
+    private void startTransitionAnimation() {
+        final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
+        setupTransitionAnimationHelper(layout);
+        mTransitionAnimationHelper.start();
+    }
+
+    private void endTransitionAnimation() {
+        mTransitionAnimationHelper.clean();
+        mTransitionAnimationHelper = null;
+    }
+
+    private void startSpinnerAnimation() {
+        final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
+        final ImageView animation = layout.findViewById(R.id.animation);
+        if (animation.getVisibility() == View.INVISIBLE) {
+            return;
+        }
+        animation.setImageResource(R.drawable.enterprise_wp_animation);
+        final AnimatedVectorDrawable vectorDrawable =
+            (AnimatedVectorDrawable) animation.getDrawable();
+        mRepeatingVectorAnimation = new RepeatingVectorAnimation(vectorDrawable);
+        mRepeatingVectorAnimation.start();
+    }
+
+    private void endSpinnerAnimation() {
+        if (mRepeatingVectorAnimation ==  null) {
+            return;
+        }
+        mRepeatingVectorAnimation.stop();
+        mRepeatingVectorAnimation = null;
     }
 }

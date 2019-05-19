@@ -15,16 +15,14 @@
  */
 package com.android.managedprovisioning.preprovisioning.consent;
 
-import static android.view.View.INVISIBLE;
-import static android.view.View.VISIBLE;
+import static com.android.internal.util.Preconditions.checkNotNull;
 
+import android.annotation.DrawableRes;
 import android.annotation.Nullable;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.view.View;
-import android.widget.Button;
 import android.widget.ImageView;
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.ProvisionLogger;
@@ -33,8 +31,7 @@ import com.android.managedprovisioning.common.TouchTargetEnforcer;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.preprovisioning.PreProvisioningController.UiParams;
-import com.android.setupwizardlib.GlifLayout;
-import java.util.List;
+import com.google.android.setupdesign.GlifLayout;
 
 /**
  * Implements functionality for the consent screen.
@@ -72,12 +69,17 @@ class PrimaryConsentUiHelper implements ConsentUiHelper {
     public void initiateUi(UiParams uiParams) {
         int titleResId = 0;
         int headerResId = 0;
+        int animationResId = 0;
         if (mUtils.isProfileOwnerAction(uiParams.provisioningAction)) {
             titleResId = R.string.setup_profile;
-            headerResId = R.string.work_profile_provisioning_accept_header;
+            headerResId = uiParams.isOrganizationOwnedProvisioning
+                    ? R.string.work_profile_provisioning_accept_header
+                    : R.string.work_profile_provisioning_accept_header_post_suw;
+            animationResId = R.drawable.consent_animation_po;
         } else if (mUtils.isDeviceOwnerAction(uiParams.provisioningAction)) {
             titleResId = R.string.setup_device;
             headerResId = R.string.fully_managed_device_provisioning_accept_header;
+            animationResId = R.drawable.consent_animation_do;
         }
 
         final CustomizationParams customization = uiParams.customization;
@@ -87,33 +89,29 @@ class PrimaryConsentUiHelper implements ConsentUiHelper {
                 customization.mainColor,
                 customization.statusBarColor);
 
-        setupAnimation();
-        setupAcceptAndContinueButton(customization, uiParams.isSilentProvisioning);
+        setupAnimation(animationResId);
+        setupAcceptAndContinueButton(uiParams.isSilentProvisioning);
 
         // set the activity title
         mActivity.setTitle(titleResId);
 
         // set up terms headers
-        setupViewTermsButton(uiParams.viewTermsIntent, uiParams.disclaimerHeadings);
+        setupViewTermsButton(uiParams.viewTermsIntent);
     }
 
-    private void setupAnimation() {
+    private void setupAnimation(@DrawableRes int animationResId) {
         final GlifLayout layout = mActivity.findViewById(R.id.setup_wizard_layout);
         final ImageView imageView = layout.findViewById(R.id.animation);
+        imageView.setImageResource(animationResId);
         final AnimatedVectorDrawable animatedVectorDrawable =
                 (AnimatedVectorDrawable) imageView.getDrawable();
         mRepeatingVectorAnimation = new RepeatingVectorAnimation(animatedVectorDrawable);
         mRepeatingVectorAnimation.start();
     }
 
-    private void setupAcceptAndContinueButton(CustomizationParams customization,
-            boolean isSilentProvisioning) {
-        Button nextButton = mActivity.findViewById(R.id.next_button);
-        nextButton.setOnClickListener(v -> onNextButtonClicked());
-        nextButton.setBackgroundTintList(ColorStateList.valueOf(customization.mainColor));
-        if (mUtils.isBrightColor(customization.mainColor)) {
-            nextButton.setTextColor(mActivity.getColor(R.color.gray_button_text));
-        }
+    private void setupAcceptAndContinueButton(boolean isSilentProvisioning) {
+        final GlifLayout layout = mActivity.findViewById(R.id.setup_wizard_layout);
+        Utils.addAcceptAndContinueButton(layout, v -> onNextButtonClicked());
         if (isSilentProvisioning) {
             onNextButtonClicked();
         }
@@ -124,15 +122,9 @@ class PrimaryConsentUiHelper implements ConsentUiHelper {
         mCallback.nextAfterUserConsent();
     }
 
-    private void setupViewTermsButton(Intent showTermsIntent,
-            List<String> disclaimerHeadings) {
+    private void setupViewTermsButton(Intent showTermsIntent) {
         final View viewTermsButton = mActivity.findViewById(R.id.show_terms_button);
-        if (disclaimerHeadings.isEmpty()) {
-            viewTermsButton.setVisibility(INVISIBLE);
-        } else {
-            viewTermsButton.setVisibility(VISIBLE);
-            viewTermsButton.setOnClickListener(v -> mActivity.startActivity(showTermsIntent));
-            mTouchTargetEnforcer.enforce(viewTermsButton, (View) viewTermsButton.getParent());
-        }
+        viewTermsButton.setOnClickListener(v -> mActivity.startActivity(showTermsIntent));
+        mTouchTargetEnforcer.enforce(viewTermsButton, (View) viewTermsButton.getParent());
     }
 }

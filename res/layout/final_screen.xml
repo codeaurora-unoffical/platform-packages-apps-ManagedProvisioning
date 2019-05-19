@@ -16,23 +16,20 @@
  * limitations under the License.
  */
 -->
-<com.android.setupwizardlib.GlifLayout
+<com.google.android.setupdesign.GlifLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/setup_wizard_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:suwFooter="@layout/done_footer">
-    <LinearLayout
-        style="@style/SuwContentFrame"
+    android:layout_height="match_parent">
+    <RelativeLayout
+        style="@style/SudContentFrame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
         <ImageView
-            android:src="@drawable/enterprise_do_animation"
             android:id="@+id/animation"
-            android:layout_width="412dp"
-            android:layout_height="412dp"
-            android:layout_gravity="center_horizontal"/>
-    </LinearLayout>
-</com.android.setupwizardlib.GlifLayout>
+            android:layout_centerInParent="true"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/animation_height"
+            android:scaleType="centerCrop"/>
+    </RelativeLayout>
+</com.google.android.setupdesign.GlifLayout>

@@ -16,29 +16,32 @@
  * limitations under the License.
  */
 -->
-<com.android.setupwizardlib.GlifLayout
+<com.google.android.setupdesign.GlifLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/setup_wizard_layout"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    app:suwFooter="@layout/accept_and_continue_footer">
-    <LinearLayout
+    android:layout_height="match_parent">
+  <LinearLayout
+      android:layout_width="match_parent"
+      android:layout_height="match_parent"
+      android:orientation="vertical">
+    <Button
+        android:id="@+id/show_terms_button"
+        android:text="@string/view_terms"
+        android:paddingStart="@dimen/spacer_16"
+        android:paddingEnd="@dimen/spacer_16"
+        android:paddingTop="@dimen/spacer_20"
+        android:paddingBottom="@dimen/spacer_20"
+        android:contentDescription="@string/read_terms"
+        style="@style/Provisioning2Theme.Button.Transparent"/>
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
-        <Button
-            android:layout_marginTop="@dimen/spacer_16"
-            android:id="@+id/show_terms_button"
-            android:text="@string/view_terms"
-            android:contentDescription="@string/read_terms"
-            style="@style/Provisioning2Theme.Button.Transparent"/>
-        <ImageView
-            android:id="@+id/animation"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="@dimen/spacer_16"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/enterprise_wp_animation" />
-    </LinearLayout>
-</com.android.setupwizardlib.GlifLayout>
+        android:layout_height="match_parent">
+      <ImageView
+          android:id="@+id/animation"
+          android:layout_centerInParent="true"
+          android:layout_width="wrap_content"
+          android:layout_height="@dimen/animation_height"/>
+    </RelativeLayout>
+  </LinearLayout>
+</com.google.android.setupdesign.GlifLayout>

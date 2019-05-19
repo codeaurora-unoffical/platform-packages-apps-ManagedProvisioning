@@ -238,6 +238,7 @@ public class PreProvisioningController {
          */
         public Intent viewTermsIntent;
         public boolean isSilentProvisioning;
+        public boolean isOrganizationOwnedProvisioning;
     }
 
     /**
@@ -323,7 +324,7 @@ public class PreProvisioningController {
         if (!checkDevicePolicyPreconditions()) {
             if (mParams.isOrganizationOwnedProvisioning) {
                 mUi.showFactoryResetDialog(R.string.cant_set_up_device,
-                        R.string.cant_set_up_device);
+                        R.string.contact_your_admin_for_help);
             } else {
                 return;
             }
@@ -352,6 +353,7 @@ public class PreProvisioningController {
         uiParams.packageInfo = packageInfo;
         uiParams.viewTermsIntent = createViewTermsIntent();
         uiParams.isSilentProvisioning = Utils.isSilentProvisioning(mContext, mParams);
+        uiParams.isOrganizationOwnedProvisioning = mParams.isOrganizationOwnedProvisioning;
 
         mUi.initiateUi(uiParams);
     }
@@ -712,6 +714,10 @@ public class PreProvisioningController {
         // We know that we can remove the managed profile because we checked
         // DevicePolicyManager.checkProvisioningPreCondition
         mUserManager.removeUserEvenWhenDisallowed(userProfileId);
+    }
+
+    SettingsFacade getSettingsFacade() {
+        return mSettingsFacade;
     }
 
     // TODO: review the use of async task for the case where the activity might have got killed

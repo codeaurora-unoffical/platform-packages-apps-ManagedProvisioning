@@ -75,12 +75,6 @@ public class CustomizationVerifier {
         assertThat(targetLogo, bitmapEqualTo(actualLogo));
     }
 
-    public void assertNextButtonColorCorrect(int targetColor) {
-        ColorStateList actual = mActivity.findViewById(R.id.next_button).getBackgroundTintList();
-        ColorStateList expected = ColorStateList.valueOf(targetColor);
-        assertThat(actual, equalTo(expected));
-    }
-
     public void assertProgressBarColorCorrect(@LayoutRes int progressBarLayoutId, int targetColor) {
         ProgressBar progressBar = mActivity.findViewById(progressBarLayoutId);
 
@@ -117,8 +111,7 @@ public class CustomizationVerifier {
     }
 
     private Drawable extractLogo() {
-        return ((ImageView) mActivity.findViewById(
-                com.android.setupwizardlib.R.id.suw_layout_icon)).getDrawable();
+        return ((ImageView) mActivity.findViewById(R.id.sud_layout_icon)).getDrawable();
     }
 
     private Bitmap drawableToBitmap(Drawable drawable) {

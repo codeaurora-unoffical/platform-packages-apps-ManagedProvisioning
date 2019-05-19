@@ -16,18 +16,23 @@
 
 package com.android.managedprovisioning.finalization;
 
+import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 
 import static com.android.internal.util.Preconditions.checkNotNull;
 import static com.android.managedprovisioning.finalization.SendDpcBroadcastService.EXTRA_PROVISIONING_PARAMS;
 
+import android.app.NotificationManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.UserHandle;
 
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.managedprovisioning.R;
+import com.android.managedprovisioning.common.NotificationHelper;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.Utils;
@@ -51,25 +56,39 @@ public class FinalizationController {
     private final SettingsFacade mSettingsFacade;
     private final UserProvisioningStateHelper mUserProvisioningStateHelper;
     private final ProvisioningIntentProvider mProvisioningIntentProvider;
+    private final NotificationHelper mNotificationHelper;
+
+    public FinalizationController(Context context,
+          UserProvisioningStateHelper userProvisioningStateHelper) {
+        this(
+                context,
+                new Utils(),
+                new SettingsFacade(),
+                userProvisioningStateHelper,
+                new NotificationHelper(context));
+    }
 
     public FinalizationController(Context context) {
         this(
                 context,
                 new Utils(),
                 new SettingsFacade(),
-                new UserProvisioningStateHelper(context));
+                new UserProvisioningStateHelper(context),
+                new NotificationHelper(context));
     }
 
     @VisibleForTesting
     FinalizationController(Context context,
             Utils utils,
             SettingsFacade settingsFacade,
-            UserProvisioningStateHelper helper) {
+            UserProvisioningStateHelper helper,
+            NotificationHelper notificationHelper) {
         mContext = checkNotNull(context);
         mUtils = checkNotNull(utils);
         mSettingsFacade = checkNotNull(settingsFacade);
         mUserProvisioningStateHelper = checkNotNull(helper);
         mProvisioningIntentProvider = new ProvisioningIntentProvider();
+        mNotificationHelper = checkNotNull(notificationHelper);
     }
 
     /**
@@ -100,20 +119,15 @@ public class FinalizationController {
             if (params.isOrganizationOwnedProvisioning) {
                 setProfileOwnerCanAccessDeviceIds();
             }
-            if (!isDuringSetupWizard()) {
+            if (!mSettingsFacade.isDuringSetupWizard(mContext)) {
                 // If a managed profile was provisioned after SUW, notify the DPC straight away.
                 notifyDpcManagedProfile(params);
             }
         }
-        if (isDuringSetupWizard()) {
+        if (mSettingsFacade.isDuringSetupWizard(mContext)) {
             // Store the information and wait for provisioningFinalized to be called
             storeProvisioningParams(params);
         }
-    }
-
-    private boolean isDuringSetupWizard() {
-        // If the flow is running in SUW, the primary user is not set up at this point
-        return !mSettingsFacade.isUserSetupCompleted(mContext);
     }
 
     private void setProfileOwnerCanAccessDeviceIds() {
@@ -121,8 +135,16 @@ public class FinalizationController {
         final int managedProfileUserId = mUtils.getManagedProfile(mContext).getIdentifier();
         final ComponentName admin = dpm.getProfileOwnerAsUser(managedProfileUserId);
         if (admin != null) {
-            dpm.setProfileOwnerCanAccessDeviceIdsForUser(
-                    admin, UserHandle.of(managedProfileUserId));
+            try {
+                final Context profileContext = mContext.createPackageContextAsUser(
+                        mContext.getPackageName(), 0 /* flags */,
+                        UserHandle.of(managedProfileUserId));
+                final DevicePolicyManager profileDpm =
+                        profileContext.getSystemService(DevicePolicyManager.class);
+                profileDpm.setProfileOwnerCanAccessDeviceIds(admin);
+            } catch (NameNotFoundException e) {
+                ProvisionLogger.logw("Error setting access to Device IDs: " + e.getMessage());
+            }
         }
     }
 
@@ -131,7 +153,8 @@ public class FinalizationController {
             ProvisioningParams params) {
         return new PrimaryProfileFinalizationHelper(params.accountToMigrate,
                 params.keepAccountMigrated, mUtils.getManagedProfile(mContext),
-                params.inferDeviceAdminPackageName(), mUtils);
+                params.inferDeviceAdminPackageName(), mUtils,
+                mUtils.isAdminIntegratedFlow(params));
     }
 
     /**
@@ -161,6 +184,9 @@ public class FinalizationController {
             if (params.provisioningAction.equals(ACTION_PROVISION_MANAGED_PROFILE)) {
                 getPrimaryProfileFinalizationHelper(params)
                         .finalizeProvisioningInPrimaryProfile(mContext, null);
+            } else if (ACTION_PROVISION_MANAGED_DEVICE.equals(params.provisioningAction)) {
+                mNotificationHelper.showPrivacyReminderNotification(
+                        mContext, NotificationManager.IMPORTANCE_DEFAULT);
             }
             mProvisioningIntentProvider.launchFinalizationScreen(mContext, params);
         } else {
@@ -178,6 +204,11 @@ public class FinalizationController {
                 mContext.sendBroadcast(provisioningCompleteIntent);
 
                 mProvisioningIntentProvider.maybeLaunchDpc(params, userId, mUtils, mContext);
+
+                if (ACTION_PROVISION_MANAGED_DEVICE.equals(params.provisioningAction)) {
+                    mNotificationHelper.showPrivacyReminderNotification(
+                            mContext, NotificationManager.IMPORTANCE_DEFAULT);
+                }
             }
         }
 
