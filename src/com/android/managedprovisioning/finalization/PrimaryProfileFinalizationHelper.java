@@ -24,7 +24,6 @@ import static com.android.internal.util.Preconditions.checkNotNull;
 import android.accounts.Account;
 import android.content.Context;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.UserHandle;
 
 import com.android.managedprovisioning.common.Utils;
@@ -41,14 +40,17 @@ class PrimaryProfileFinalizationHelper {
     private final boolean mKeepAccountMigrated;
     private final Utils mUtils;
     private final UserHandle mManagedUserHandle;
+    private final boolean mIsAdminIntegratedFlow;
 
     PrimaryProfileFinalizationHelper(Account migratedAccount, boolean keepAccountMigrated,
-            UserHandle managedUserHandle, String mdmPackageName, Utils utils) {
+        UserHandle managedUserHandle, String mdmPackageName, Utils utils,
+        boolean isAdminIntegratedFlow) {
         mMigratedAccount = migratedAccount;
         mKeepAccountMigrated = keepAccountMigrated;
         mMdmPackageName = checkNotNull(mdmPackageName);
         mManagedUserHandle = checkNotNull(managedUserHandle);
         mUtils = checkNotNull(utils);
+        mIsAdminIntegratedFlow = isAdminIntegratedFlow;
     }
 
     void finalizeProvisioningInPrimaryProfile(Context context,
@@ -66,33 +68,28 @@ class PrimaryProfileFinalizationHelper {
             finishAccountMigration(context, primaryProfileSuccessIntent, callback);
             // Note that we currently do not check if account migration worked
         } else {
-            context.sendBroadcast(primaryProfileSuccessIntent);
-            if (callback != null) {
-                callback.cleanup();
-            }
+            handleFinalization(context, callback, primaryProfileSuccessIntent);
+        }
+    }
+
+    private void handleFinalization(Context context, DpcReceivedSuccessReceiver.Callback callback,
+            Intent primaryProfileSuccessIntent) {
+        context.sendBroadcast(primaryProfileSuccessIntent);
+        if (callback != null) {
+            callback.cleanup();
         }
     }
 
     private void finishAccountMigration(final Context context,
             final Intent primaryProfileSuccessIntent,
             DpcReceivedSuccessReceiver.Callback callback) {
-        new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... params) {
-                if (!mKeepAccountMigrated) {
-                    mUtils.removeAccount(context, mMigratedAccount);
-                }
-
-                context.sendBroadcast(primaryProfileSuccessIntent);
-                return null;
-            }
-
-            @Override
-            protected void onPostExecute(Void result) {
-                if (callback != null) {
-                    callback.cleanup();
-                }
-            }
-        }.execute();
+        // For admin integrated flow, account is removed earlier in the flow.
+        if (!mIsAdminIntegratedFlow && !mKeepAccountMigrated) {
+            mUtils.removeAccountAsync(context, mMigratedAccount, () -> {
+                handleFinalization(context, callback, primaryProfileSuccessIntent);
+            });
+        } else {
+            handleFinalization(context, callback, primaryProfileSuccessIntent);
+        }
     }
 }

@@ -18,14 +18,16 @@ package com.android.managedprovisioning.common;
 
 import android.annotation.Nullable;
 import android.content.res.ColorStateList;
+import android.content.res.Resources.Theme;
 import android.os.Bundle;
 import android.sysprop.SetupWizardProperties;
 
 import androidx.annotation.VisibleForTesting;
 
 import com.android.managedprovisioning.R;
-import com.android.setupwizardlib.GlifLayout;
-import com.android.setupwizardlib.util.WizardManagerHelper;
+import com.google.android.setupdesign.GlifLayout;
+import com.google.android.setupdesign.util.ThemeResolver;
+
 
 /**
  * Base class for setting up the layout.
@@ -46,7 +48,13 @@ public abstract class SetupGlifLayoutActivity extends SetupLayoutActivity {
         super(utils);
     }
 
-    protected void initializeLayoutParams(int layoutResourceId, @Nullable Integer headerResourceId,
+    @Override
+    protected void onApplyThemeResource(Theme theme, int resid, boolean first) {
+        theme.applyStyle(R.style.SetupWizardPartnerResource, true);
+        super.onApplyThemeResource(theme, resid, first);
+    }
+
+        protected void initializeLayoutParams(int layoutResourceId, @Nullable Integer headerResourceId,
             int mainColor, int statusBarColor) {
         setContentView(layoutResourceId);
         GlifLayout layout = findViewById(R.id.setup_wizard_layout);
@@ -56,16 +64,19 @@ public abstract class SetupGlifLayoutActivity extends SetupLayoutActivity {
 
         if (headerResourceId != null) {
             layout.setHeaderText(headerResourceId);
+            layout.setHeaderColor(
+                    getResources().getColorStateList(R.color.header_text_color, getTheme()));
         }
 
         layout.setIcon(LogoUtils.getOrganisationLogo(this, mainColor));
     }
 
     private void setDefaultTheme() {
-        // Take Glif light as default theme like
-        // com.google.android.setupwizard.util.ThemeHelper.getDefaultTheme
-        setTheme(WizardManagerHelper.getThemeRes(SetupWizardProperties.theme().orElse(""),
-                R.style.SuwThemeGlifV3_Light));
+        setTheme(new ThemeResolver.Builder(ThemeResolver.getDefault())
+            .setDefaultTheme(R.style.SudThemeGlifV3_Light)
+            .setUseDayNight(false)
+            .build()
+            .resolve(SetupWizardProperties.theme().orElse("")));
     }
 
 }
