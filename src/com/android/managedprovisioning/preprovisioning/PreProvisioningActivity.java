@@ -21,8 +21,10 @@ import static android.app.admin.DevicePolicyManager.ACTION_GET_PROVISIONING_MODE
 
 import static com.android.managedprovisioning.model.ProvisioningParams.PROVISIONING_MODE_FULLY_MANAGED_DEVICE_LEGACY;
 
+import android.annotation.IntDef;
 import android.annotation.Nullable;
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.content.Intent;
@@ -40,6 +42,7 @@ import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
 import com.android.managedprovisioning.common.LogoUtils;
 import com.android.managedprovisioning.common.ProvisionLogger;
+import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.SetupGlifLayoutActivity;
 import com.android.managedprovisioning.common.SimpleDialog;
 import com.android.managedprovisioning.common.Utils;
@@ -51,8 +54,13 @@ import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelperCa
 import com.android.managedprovisioning.provisioning.LandingActivity;
 import com.android.managedprovisioning.provisioning.ProvisioningActivity;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
         SimpleDialog.SimpleDialogListener, PreProvisioningController.Ui, ConsentUiHelperCallback {
+
+    private static final String KEY_ACTIVITY_STATE = "activity-state";
 
     private static final int ENCRYPT_DEVICE_REQUEST_CODE = 1;
     @VisibleForTesting
@@ -67,8 +75,9 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     private static final String SAVED_PROVISIONING_PARAMS = "saved_provisioning_params";
 
     private static final String ERROR_AND_CLOSE_DIALOG = "PreProvErrorAndCloseDialog";
-    private static final String BACK_PRESSED_DIALOG = "PreProvBackPressedDialog";
-    private static final String CANCELLED_CONSENT_DIALOG = "PreProvCancelledConsentDialog";
+    private static final String BACK_PRESSED_DIALOG_RESET = "PreProvBackPressedDialogReset";
+    private static final String BACK_PRESSED_DIALOG_CLOSE_ACTIVITY =
+            "PreProvBackPressedDialogCloseActivity";
     private static final String LAUNCHER_INVALID_DIALOG = "PreProvCurrentLauncherInvalidDialog";
     private static final String DELETE_MANAGED_PROFILE_DIALOG = "PreProvDeleteManagedProfileDialog";
 
@@ -76,6 +85,18 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     private ControllerProvider mControllerProvider;
     private final AccessibilityContextMenuMaker mContextMenuMaker;
     private ConsentUiHelper mConsentUiHelper;
+
+    static final int STATE_PREPROVISIONING_INTIIALIZING = 1;
+    static final int STATE_PROVISIONING_STARTED = 2;
+    static final int STATE_PROVISIONING_FINALIZED = 3;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({STATE_PREPROVISIONING_INTIIALIZING,
+            STATE_PROVISIONING_STARTED,
+            STATE_PROVISIONING_FINALIZED})
+    private @interface PreProvisioningState {}
+
+    private @PreProvisioningState int mState;
 
     private static final String ERROR_DIALOG_RESET = "ErrorDialogReset";
 
@@ -96,13 +117,20 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mState = savedInstanceState == null
+                ? STATE_PREPROVISIONING_INTIIALIZING
+                : savedInstanceState.getInt(KEY_ACTIVITY_STATE, STATE_PREPROVISIONING_INTIIALIZING);
+
         mController = mControllerProvider.getInstance(this);
-        ProvisioningParams params = savedInstanceState == null ? null
-                : savedInstanceState.getParcelable(SAVED_PROVISIONING_PARAMS);
         mConsentUiHelper = ConsentUiHelperFactory.getInstance(
-                /* activity */ this, /* contextMenuMaker */ mContextMenuMaker, /* callback */ this,
-                /* utils */ mUtils);
-        mController.initiateProvisioning(getIntent(), params, getCallingPackage());
+                /* activity */ this, /* contextMenuMaker */ mContextMenuMaker,
+                /* callback */ this, /* utils */ mUtils, mController.getSettingsFacade());
+        if (mState == STATE_PREPROVISIONING_INTIIALIZING) {
+            ProvisioningParams params = savedInstanceState == null ? null
+                    : savedInstanceState.getParcelable(SAVED_PROVISIONING_PARAMS);
+            mController.initiateProvisioning(getIntent(), params, getCallingPackage());
+        }
     }
 
     @Override
@@ -121,6 +149,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable(SAVED_PROVISIONING_PARAMS, mController.getParams());
+        outState.putInt(KEY_ACTIVITY_STATE, mState);
     }
 
     @Override
@@ -132,6 +161,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
                 }
                 break;
             case PROVISIONING_REQUEST_CODE:
+                mState = STATE_PROVISIONING_FINALIZED;
                 setResult(resultCode);
                 finish();
                 break;
@@ -193,8 +223,8 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     @Override
     public void onNegativeButtonClick(DialogFragment dialog) {
         switch (dialog.getTag()) {
-            case CANCELLED_CONSENT_DIALOG:
-            case BACK_PRESSED_DIALOG:
+            case BACK_PRESSED_DIALOG_CLOSE_ACTIVITY:
+            case BACK_PRESSED_DIALOG_RESET:
                 // user chose to continue. Do nothing
                 break;
             case LAUNCHER_INVALID_DIALOG:
@@ -213,15 +243,13 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     public void onPositiveButtonClick(DialogFragment dialog) {
         switch (dialog.getTag()) {
             case ERROR_AND_CLOSE_DIALOG:
-            case BACK_PRESSED_DIALOG:
-                // Close activity
-                setResult(Activity.RESULT_CANCELED);
-                // TODO: Move logging to close button, if we finish provisioning there.
-                mController.logPreProvisioningCancelled();
-                finish();
+            case BACK_PRESSED_DIALOG_CLOSE_ACTIVITY:
+                onProvisioningAborted();
                 break;
-            case CANCELLED_CONSENT_DIALOG:
-                mUtils.sendFactoryResetBroadcast(this, "Device owner setup cancelled");
+            case BACK_PRESSED_DIALOG_RESET:
+                mUtils.sendFactoryResetBroadcast(this,
+                        "Provisioning cancelled by user on consent screen");
+                onProvisioningAborted();
                 break;
             case LAUNCHER_INVALID_DIALOG:
                 requestLauncherPick();
@@ -240,6 +268,12 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
             default:
                 SimpleDialog.throwButtonClickHandlerNotImplemented(dialog);
         }
+    }
+
+    private void onProvisioningAborted() {
+        setResult(Activity.RESULT_CANCELED);
+        mController.logPreProvisioningCancelled();
+        finish();
     }
 
     @Override
@@ -272,6 +306,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     }
 
     public void startProvisioning(int userId, ProvisioningParams params) {
+        mState = STATE_PROVISIONING_STARTED;
         Intent intent = new Intent(this, ProvisioningActivity.class);
         intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, params);
         startActivityForResultAsUser(intent, PROVISIONING_REQUEST_CODE, new UserHandle(userId));
@@ -284,7 +319,10 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
         intentGetMode.setPackage(adminPackage);
         final Intent intentPolicy = new Intent(ACTION_ADMIN_POLICY_COMPLIANCE);
         intentPolicy.setPackage(adminPackage);
-        if (intentGetMode.resolveActivity(getPackageManager()) != null
+        final ActivityManager activityManager = getSystemService(ActivityManager.class);
+        if (!activityManager.isLowRamDevice()
+                && !mController.getParams().isNfc
+                && intentGetMode.resolveActivity(getPackageManager()) != null
                 && intentPolicy.resolveActivity(getPackageManager()) != null) {
             mController.putExtrasIntoGetModeIntent(intentGetMode);
             startActivityForResult(intentGetMode, GET_PROVISIONING_MODE_REQUEST_CODE);
@@ -338,8 +376,13 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
 
     @Override
     public void onBackPressed() {
-        mController.logPreProvisioningCancelled();
-        super.onBackPressed();
+        if (mController.getParams().isOrganizationOwnedProvisioning) {
+            showDialog(mUtils.createCancelProvisioningResetDialogBuilder(),
+                    BACK_PRESSED_DIALOG_RESET);
+        } else {
+            showDialog(mUtils.createCancelProvisioningDialogBuilder(),
+                    BACK_PRESSED_DIALOG_CLOSE_ACTIVITY);
+        }
     }
 
     @Override

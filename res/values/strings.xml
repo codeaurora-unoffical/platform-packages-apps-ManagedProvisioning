@@ -19,8 +19,8 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <!-- General provisioning strings used for both device owner and work profile provisioning -->
 
-  <!-- App label displayed on the notification shown to indicate that the provisioning process was previously started but not completed. [CHAR LIMIT=45] -->
-  <string name="app_label">Work profile setup</string>
+  <!-- App label displayed in the corner of a notification. This label lets the user know which app or system setting the notifications are coming from. It's not tappable, and it's meant as additional information for the user. [CHAR LIMIT=45] -->
+  <string name="app_label">Work Setup</string>
 
   <!-- Title of the provisioning error dialog. [CHAR LIMIT=45] -->
   <string name="provisioning_error_title">Oops!</string>
@@ -344,8 +344,8 @@
   <string name="now_lets_set_up_everything_else">Now, let\'s set up everything else</string>
 
   <!-- Organization brand screen -->
-  <!-- Screen title. This is letting the user know that their organization (e.g. company) will manage their device. [CHAR LIMIT=NONE]-->
-  <string name="brand_screen_header">Your organization will manage this device</string>
+  <!-- Screen title. This is letting the user know that their organization (e.g. company) owns the device. [CHAR LIMIT=NONE]-->
+  <string name="brand_screen_header">This device belongs to your organization</string>
   <!-- Subtext on a screen. This is letting the user know that their organization (e.g. company) will manage their device, and it's introducing the management app that their IT admin will use. [CHAR LIMIT=NONE]-->
   <string name="brand_screen_subheader">The following app will be used to manage and monitor this phone</string>
 
@@ -356,6 +356,8 @@
   <!-- Work profile setup screens -->
   <!-- Screen title. This is letting the user know that they'll first set up their work profile before setting up the rest of their device. [CHAR LIMIT=NONE]-->
   <string name="work_profile_provisioning_accept_header">First, let\'s set up your work profile</string>
+  <!-- Screen title in the new phone setup flow. This text is letting the user know that they're about to set up a work profile on their new phone. [CHAR LIMIT=NONE]-->
+  <string name="work_profile_provisioning_accept_header_post_suw">Let\'s set up your work profile</string>
   <!-- Screen title. This is letting the user know what the work profile is for, and that they can find all of their work apps in this profile. [CHAR LIMIT=NONE]-->
   <string name="work_profile_provisioning_step_1_header">Work apps are kept in your work profile</string>
   <!-- Screen title. This is letting the user know that they have to option to pause their work apps when they're done with work for the day or want to take a break. "Pausing" the apps means that they won't get any notifications or interruptions from those apps. [CHAR LIMIT=NONE]-->
