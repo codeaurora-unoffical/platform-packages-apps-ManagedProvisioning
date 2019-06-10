@@ -42,10 +42,10 @@ import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
 import com.android.managedprovisioning.common.LogoUtils;
 import com.android.managedprovisioning.common.ProvisionLogger;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.SetupGlifLayoutActivity;
 import com.android.managedprovisioning.common.SimpleDialog;
 import com.android.managedprovisioning.common.Utils;
+import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.preprovisioning.PreProvisioningController.UiParams;
 import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelperFactory;
@@ -53,6 +53,7 @@ import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelper;
 import com.android.managedprovisioning.preprovisioning.consent.ConsentUiHelperCallback;
 import com.android.managedprovisioning.provisioning.LandingActivity;
 import com.android.managedprovisioning.provisioning.ProvisioningActivity;
+import com.google.android.setupcompat.util.WizardManagerHelper;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -279,13 +280,16 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     @Override
     public void requestEncryption(ProvisioningParams params) {
         Intent encryptIntent = new Intent(this, EncryptDeviceActivity.class);
+        WizardManagerHelper.copyWizardManagerExtras(getIntent(), encryptIntent);
         encryptIntent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, params);
         startActivityForResult(encryptIntent, ENCRYPT_DEVICE_REQUEST_CODE);
     }
 
     @Override
     public void requestWifiPick() {
-        startActivityForResult(mUtils.getWifiPickIntent(), WIFI_REQUEST_CODE);
+        final Intent intent = mUtils.getWifiPickIntent();
+        WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
+        startActivityForResult(intent, WIFI_REQUEST_CODE);
     }
 
     @Override
@@ -308,6 +312,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     public void startProvisioning(int userId, ProvisioningParams params) {
         mState = STATE_PROVISIONING_STARTED;
         Intent intent = new Intent(this, ProvisioningActivity.class);
+        WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
         intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, params);
         startActivityForResultAsUser(intent, PROVISIONING_REQUEST_CODE, new UserHandle(userId));
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
@@ -355,6 +360,7 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
     @Override
     public void prepareAdminIntegratedFlow(ProvisioningParams params) {
         Intent intent = new Intent(this, LandingActivity.class);
+        WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
         intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, params);
         startActivityForResult(intent, ADMIN_INTEGRATED_FLOW_PREPARE_REQUEST_CODE);
     }
@@ -404,8 +410,8 @@ public class PreProvisioningActivity extends SetupGlifLayoutActivity implements
 
     @Override
     public void initializeLayoutParams(int layoutResourceId, @Nullable Integer headerResourceId,
-            int mainColor, int statusBarColor) {
-        super.initializeLayoutParams(layoutResourceId, headerResourceId, mainColor, statusBarColor);
+            CustomizationParams params) {
+        super.initializeLayoutParams(layoutResourceId, headerResourceId, params);
     }
 
     /**
