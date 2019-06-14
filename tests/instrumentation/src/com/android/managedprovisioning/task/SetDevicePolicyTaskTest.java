@@ -20,7 +20,6 @@ import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEV
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -34,10 +33,6 @@ import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 
 import com.android.managedprovisioning.R;
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
@@ -241,7 +236,6 @@ public class SetDevicePolicyTaskTest extends AndroidTestCase {
                 .setDeviceAdminComponentName(ADMIN_COMPONENT_NAME)
                 .setProvisioningAction(action)
                 .build();
-        mTask = new SetDevicePolicyTask(mUtils, mContext, params, mCallback,
-                mock(ProvisioningAnalyticsTracker.class));
+        mTask = new SetDevicePolicyTask(mUtils, mContext, params, mCallback);
     }
 }

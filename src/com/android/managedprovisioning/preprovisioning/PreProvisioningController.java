@@ -34,7 +34,6 @@ import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_ACCOUNT_T
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_IMEI;
 import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SERIAL_NUMBER;
-import static android.app.admin.DevicePolicyManager.EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS;
 import static android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED;
 
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_PREPROVISIONING_ACTIVITY_TIME_MS;
@@ -59,7 +58,6 @@ import android.content.pm.UserInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.PersistableBundle;
-import android.os.SystemClock;
 import android.os.UserManager;
 import android.service.persistentdata.PersistentDataBlockManager;
 import android.telephony.TelephonyManager;
@@ -67,11 +65,9 @@ import android.text.TextUtils;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.managedprovisioning.R;
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
 import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
 import com.android.managedprovisioning.analytics.TimeLogger;
 import com.android.managedprovisioning.common.IllegalProvisioningArgumentException;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.MdmPackageInfo;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.SettingsFacade;
@@ -105,7 +101,6 @@ public class PreProvisioningController {
     private final PersistentDataBlockManager mPdbManager;
     private final TimeLogger mTimeLogger;
     private final ProvisioningAnalyticsTracker mProvisioningAnalyticsTracker;
-    private final ManagedProvisioningSharedPreferences mSharedPreferences;
 
     private ProvisioningParams mParams;
 
@@ -115,8 +110,7 @@ public class PreProvisioningController {
         this(context, ui,
                 new TimeLogger(context, PROVISIONING_PREPROVISIONING_ACTIVITY_TIME_MS),
                 new MessageParser(context), new Utils(), new SettingsFacade(),
-                EncryptionController.getInstance(context),
-                new ManagedProvisioningSharedPreferences(context));
+                EncryptionController.getInstance(context));
     }
     @VisibleForTesting
     PreProvisioningController(
@@ -126,8 +120,7 @@ public class PreProvisioningController {
             @NonNull MessageParser parser,
             @NonNull Utils utils,
             @NonNull SettingsFacade settingsFacade,
-            @NonNull EncryptionController encryptionController,
-            @NonNull ManagedProvisioningSharedPreferences sharedPreferences) {
+            @NonNull EncryptionController encryptionController) {
         mContext = checkNotNull(context, "Context must not be null");
         mUi = checkNotNull(ui, "Ui must not be null");
         mTimeLogger = checkNotNull(timeLogger, "Time logger must not be null");
@@ -136,7 +129,6 @@ public class PreProvisioningController {
         mUtils = checkNotNull(utils, "Utils must not be null");
         mEncryptionController = checkNotNull(encryptionController,
                 "EncryptionController must not be null");
-        mSharedPreferences = checkNotNull(sharedPreferences);
 
         mDevicePolicyManager = mContext.getSystemService(DevicePolicyManager.class);
         mUserManager = mContext.getSystemService(UserManager.class);
@@ -145,9 +137,7 @@ public class PreProvisioningController {
         mKeyguardManager = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
         mPdbManager = (PersistentDataBlockManager) mContext.getSystemService(
                 Context.PERSISTENT_DATA_BLOCK_SERVICE);
-        mProvisioningAnalyticsTracker = new ProvisioningAnalyticsTracker(
-                MetricsWriterFactory.getMetricsWriter(mContext, mSettingsFacade),
-                mSharedPreferences);
+        mProvisioningAnalyticsTracker = ProvisioningAnalyticsTracker.getInstance();
     }
 
     interface Ui {
@@ -255,7 +245,6 @@ public class PreProvisioningController {
      */
     public void initiateProvisioning(Intent intent, ProvisioningParams params,
             String callingPackage) {
-        mSharedPreferences.writeProvisioningStartedTimestamp(SystemClock.elapsedRealtime());
         mProvisioningAnalyticsTracker.logProvisioningSessionStarted(mContext);
 
         if (!tryParseParameters(intent, params)) {
@@ -374,7 +363,6 @@ public class PreProvisioningController {
                 builder.setProvisioningMode(PROVISIONING_MODE_FULLY_MANAGED_DEVICE);
                 builder.setProvisioningAction(ACTION_PROVISION_MANAGED_DEVICE);
                 maybeUpdateAdminExtrasBundle(builder, resultIntent);
-                maybeUpdateSkipEducationScreens(builder, resultIntent);
                 mParams = builder.build();
                 return true;
             case DevicePolicyManager.PROVISIONING_MODE_MANAGED_PROFILE:
@@ -382,21 +370,12 @@ public class PreProvisioningController {
                 builder.setProvisioningAction(ACTION_PROVISION_MANAGED_PROFILE);
                 maybeUpdateAccountToMigrate(builder, resultIntent);
                 maybeUpdateAdminExtrasBundle(builder, resultIntent);
-                maybeUpdateSkipEducationScreens(builder, resultIntent);
                 mParams = builder.build();
                 return true;
             default:
                 ProvisionLogger.logw("Unknown returned provisioning mode:"
                         + provisioningMode);
                 return false;
-        }
-    }
-
-    private void maybeUpdateSkipEducationScreens(ProvisioningParams.Builder builder,
-            Intent resultIntent) {
-        if (resultIntent.hasExtra(EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS)) {
-            builder.setSkipEducationScreens(resultIntent.getBooleanExtra(
-                    EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS, /* defaultValue */ false));
         }
     }
 
@@ -449,8 +428,6 @@ public class PreProvisioningController {
      * before starting provisioning.
      */
     public void continueProvisioningAfterUserConsent() {
-        mProvisioningAnalyticsTracker.logProvisioningAction(mContext, mParams.provisioningAction);
-
         // check if encryption is required
         if (isEncryptionRequired()) {
             if (mDevicePolicyManager.getStorageEncryptionStatus()

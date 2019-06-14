@@ -21,7 +21,6 @@ import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEV
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -36,7 +35,6 @@ import android.test.mock.MockPackageManager;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.task.nonrequiredapps.NonRequiredAppsLogic;
 
@@ -79,8 +77,7 @@ public class DeleteNonRequiredAppsTaskTest {
 
         mDeletedApps = new HashSet<>();
 
-        mTask = new DeleteNonRequiredAppsTask(mTestContext, TEST_PARAMS, mCallback, mLogic,
-                mock(ProvisioningAnalyticsTracker.class));
+        mTask = new DeleteNonRequiredAppsTask(mTestContext, TEST_PARAMS, mCallback, mLogic);
     }
 
     @Test

@@ -25,11 +25,8 @@ import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.matcher.ViewMatchers.withText;
 
 import static org.hamcrest.core.IsNot.not;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
 
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.provider.Settings;
 
@@ -41,7 +38,6 @@ import androidx.test.rule.ActivityTestRule;
 
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.TestInstrumentationRunner;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.model.DisclaimersParam;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
@@ -49,9 +45,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -74,21 +67,15 @@ public class TermsActivityTest {
 
     private final Map<String, String> mPathToContent = new HashMap<>();
 
-    @Mock
-    private SettingsFacade mSettingsFacade;
-
     @Rule
     public ActivityTestRule<TermsActivity> mActivityRule = new ActivityTestRule<>(
             TermsActivity.class, true, false);
 
     @Before
     public void setUp() throws Settings.SettingNotFoundException {
-        MockitoAnnotations.initMocks(this);
-        when(mSettingsFacade.isDuringSetupWizard(any(Context.class))).thenReturn(false);
-
         TestInstrumentationRunner.registerReplacedActivity(TermsActivity.class,
                 (classLoader, className, intent) -> new TermsActivity(
-                        (file) -> mPathToContent.get(file.getPath()), null, mSettingsFacade));
+                        (file) -> mPathToContent.get(file.getPath()), null));
         mPathToContent.clear();
     }
 

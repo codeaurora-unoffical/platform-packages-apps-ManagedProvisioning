@@ -30,8 +30,6 @@ import android.os.UserManager;
 import android.test.AndroidTestCase;
 import android.test.suitebuilder.annotation.SmallTest;
 
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -45,7 +43,6 @@ public class DisallowAddUserTaskTest extends AndroidTestCase {
     @Mock private Context mockContext;
     @Mock private UserManager mockUserManager;
     @Mock private AbstractProvisioningTask.Callback mCallback;
-    @Mock private ProvisioningAnalyticsTracker mProvisioningAnalyticsTracker;
 
     // Normal cases.
     private UserInfo primaryUser = new UserInfo(0, "Primary",
@@ -75,8 +72,7 @@ public class DisallowAddUserTaskTest extends AndroidTestCase {
         // user
         when(mockUserManager.getUsers()).thenReturn(Collections.singletonList(primaryUser));
         final DisallowAddUserTask task =
-                new DisallowAddUserTask(false, mockContext, null, mCallback,
-                        mProvisioningAnalyticsTracker);
+                new DisallowAddUserTask(false, mockContext, null, mCallback);
 
         // WHEN running the DisallowAddUserTask on the single user
         task.run(primaryUser.id);
@@ -93,8 +89,7 @@ public class DisallowAddUserTaskTest extends AndroidTestCase {
         // user
         when(mockUserManager.getUsers()).thenReturn(Collections.singletonList(primaryUser));
         final DisallowAddUserTask task =
-                new DisallowAddUserTask(false, mockContext, null, mCallback,
-                        mProvisioningAnalyticsTracker);
+                new DisallowAddUserTask(false, mockContext, null, mCallback);
 
         // GIVEN that the user restriction has already been set
         when(mockUserManager.hasUserRestriction(UserManager.DISALLOW_ADD_USER,
@@ -116,8 +111,7 @@ public class DisallowAddUserTaskTest extends AndroidTestCase {
         when(mockUserManager.getUsers()).thenReturn(Arrays.asList(new UserInfo[]{
                 systemUser, meatUser}));
         final DisallowAddUserTask task =
-                new DisallowAddUserTask(true, mockContext, null, mCallback,
-                        mProvisioningAnalyticsTracker);
+                new DisallowAddUserTask(true, mockContext, null, mCallback);
 
         // WHEN running the DisallowAddUserTask on the meat user
         task.run(meatUser.id);
@@ -135,8 +129,7 @@ public class DisallowAddUserTaskTest extends AndroidTestCase {
         // GIVEN that we have a split system user and only the system user on the device
         when(mockUserManager.getUsers()).thenReturn(Collections.singletonList(systemUser));
         final DisallowAddUserTask task =
-                new DisallowAddUserTask(true, mockContext, null, mCallback,
-                        mProvisioningAnalyticsTracker);
+                new DisallowAddUserTask(true, mockContext, null, mCallback);
 
         // WHEN running the DisallowAddUserTask on the system user
         task.run(systemUser.id);

@@ -19,7 +19,6 @@ import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertFalse;
 import static junit.framework.Assert.assertTrue;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import android.content.Context;
@@ -29,10 +28,6 @@ import android.os.UserManager;
 
 import androidx.test.InstrumentationRegistry;
 
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.task.nonrequiredapps.SystemAppsSnapshot;
 import com.android.managedprovisioning.tests.R;
 
@@ -90,8 +85,7 @@ public class MigrateSystemAppsSnapshotTaskTest {
         when(mContext.getFilesDir())
                 .thenReturn(
                         new File(InstrumentationRegistry.getTargetContext().getFilesDir(), "test"));
-        mMigrateSystemAppsSnapshotTask = new MigrateSystemAppsSnapshotTask(mContext, mCallback,
-                mock(ProvisioningAnalyticsTracker.class));
+        mMigrateSystemAppsSnapshotTask = new MigrateSystemAppsSnapshotTask(mContext, mCallback);
         mSystemAppsSnapshot = new SystemAppsSnapshot(mContext);
     }
 

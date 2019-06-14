@@ -61,7 +61,6 @@ import android.text.TextUtils;
 import com.android.managedprovisioning.R;
 import com.android.managedprovisioning.analytics.TimeLogger;
 import com.android.managedprovisioning.common.IllegalProvisioningArgumentException;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.PackageDownloadInfo;
@@ -121,8 +120,6 @@ public class PreProvisioningControllerTest extends AndroidTestCase {
     private EncryptionController mEncryptionController;
     @Mock
     private TimeLogger mTimeLogger;
-    @Mock
-    private ManagedProvisioningSharedPreferences mSharedPreferences;
 
     private ProvisioningParams mParams;
 
@@ -168,9 +165,8 @@ public class PreProvisioningControllerTest extends AndroidTestCase {
         when(mKeyguardManager.inKeyguardRestrictedInputMode()).thenReturn(false);
         when(mDevicePolicyManager.getStorageEncryptionStatus())
                 .thenReturn(DevicePolicyManager.ENCRYPTION_STATUS_INACTIVE);
-        when(mSettingsFacade.isDuringSetupWizard(mContext)).thenReturn(false);
         mController = new PreProvisioningController(mContext, mUi, mTimeLogger, mMessageParser,
-                mUtils, mSettingsFacade, mEncryptionController, mSharedPreferences);
+                mUtils, mSettingsFacade, mEncryptionController);
     }
 
     public void testManagedProfile() throws Exception {

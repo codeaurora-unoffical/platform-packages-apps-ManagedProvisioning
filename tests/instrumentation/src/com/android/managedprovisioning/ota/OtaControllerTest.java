@@ -36,7 +36,6 @@ import android.util.Pair;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
 import com.android.managedprovisioning.task.AbstractProvisioningTask;
 import com.android.managedprovisioning.task.CrossProfileIntentFiltersSetter;
 import com.android.managedprovisioning.task.DeleteNonRequiredAppsTask;
@@ -78,7 +77,6 @@ public class OtaControllerTest {
     @Mock private PackageManager mPackageManager;
     @Mock private UserManager mUserManager;
     @Mock private CrossProfileIntentFiltersSetter mCrossProfileIntentFiltersSetter;
-    @Mock private ProvisioningAnalyticsTracker mProvisioningAnalyticsTracker;
 
     private TaskExecutor mTaskExecutor;
 
@@ -108,8 +106,7 @@ public class OtaControllerTest {
     @Test
     public void testDeviceOwnerSystemUser() {
         OtaController controller = new OtaController(mContext, mTaskExecutor,
-                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER,
-                mProvisioningAnalyticsTracker);
+                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER);
 
         // GIVEN that there is a device owner on the system user
         setDeviceOwner(UserHandle.USER_SYSTEM, ADMIN_COMPONENT);
@@ -130,8 +127,7 @@ public class OtaControllerTest {
     @Test
     public void testDeviceOwnerSeparate() {
         OtaController controller = new OtaController(mContext, mTaskExecutor,
-                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER,
-                mProvisioningAnalyticsTracker);
+                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER);
 
         // GIVEN that there is a device owner on a non-system meat user
         addMeatUser(DEVICE_OWNER_USER_ID);
@@ -154,8 +150,7 @@ public class OtaControllerTest {
     @Test
     public void testManagedProfileWithoutMissingSystemIme() {
         OtaController controller = new OtaController(mContext, mTaskExecutor,
-                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER,
-                mProvisioningAnalyticsTracker);
+                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER);
 
         // GIVEN that there is a managed profile
         addManagedProfile(MANAGED_PROFILE_USER_ID, ADMIN_COMPONENT);
@@ -185,8 +180,7 @@ public class OtaControllerTest {
                 (IntFunction<ArraySet<String>>) mock(IntFunction.class);
 
         OtaController controller = new OtaController(mContext, mTaskExecutor,
-                mCrossProfileIntentFiltersSetter, missingSystemImeProvider,
-                mProvisioningAnalyticsTracker);
+                mCrossProfileIntentFiltersSetter, missingSystemImeProvider);
 
         // GIVEN that there is a managed profile
         addManagedProfile(MANAGED_PROFILE_USER_ID, ADMIN_COMPONENT);
@@ -222,8 +216,7 @@ public class OtaControllerTest {
     @Test
     public void testManagedUser() {
         OtaController controller = new OtaController(mContext, mTaskExecutor,
-                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER,
-                mProvisioningAnalyticsTracker);
+                mCrossProfileIntentFiltersSetter, NO_MISSING_SYSTEM_IME_PROVIDER);
 
         // GIVEN that there is a managed profile
         addManagedUser(MANAGED_USER_USER_ID, ADMIN_COMPONENT);

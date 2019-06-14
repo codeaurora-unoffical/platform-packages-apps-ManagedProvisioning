@@ -22,12 +22,8 @@ import android.os.UserHandle;
 import android.os.UserManager;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.R;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
 /**
@@ -41,19 +37,15 @@ public class DisallowAddUserTask extends AbstractProvisioningTask {
             Context context,
             ProvisioningParams params,
             Callback callback) {
-        this(UserManager.isSplitSystemUser(), context, params, callback,
-                new ProvisioningAnalyticsTracker(
-                        MetricsWriterFactory.getMetricsWriter(context, new SettingsFacade()),
-                        new ManagedProvisioningSharedPreferences(context)));
+        this(UserManager.isSplitSystemUser(), context, params, callback);
     }
 
     @VisibleForTesting
-    public DisallowAddUserTask(boolean splitSystemUser,
+    DisallowAddUserTask(boolean splitSystemUser,
             Context context,
             ProvisioningParams params,
-            Callback callback,
-            ProvisioningAnalyticsTracker provisioningAnalyticsTracker) {
-        super(context, params, callback, provisioningAnalyticsTracker);
+            Callback callback) {
+        super(context, params, callback);
         mIsSplitSystemUser = splitSystemUser;
         mUserManager = (UserManager) context.getSystemService(Context.USER_SERVICE);
     }

@@ -25,12 +25,9 @@ import android.os.UserHandle;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
 import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
 import com.android.managedprovisioning.analytics.TimeLogger;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.ProvisionLogger;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
 /**
@@ -62,9 +59,7 @@ class AdminIntegratedFlowPrepareManager implements ProvisioningControllerCallbac
         this(
                 context,
                 new ProvisioningManagerHelper(context),
-                new ProvisioningAnalyticsTracker(
-                        MetricsWriterFactory.getMetricsWriter(context, new SettingsFacade()),
-                        new ManagedProvisioningSharedPreferences(context)),
+                ProvisioningAnalyticsTracker.getInstance(),
                 new TimeLogger(context, PROVISIONING_PREPARE_TOTAL_TIME_MS));
     }
 

@@ -18,7 +18,6 @@ package com.android.managedprovisioning.task;
 
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -29,9 +28,6 @@ import android.content.pm.PackageManager;
 
 import androidx.test.filters.SmallTest;
 
-import com.android.managedprovisioning.analytics.MetricsWriter;
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
 import org.junit.Before;
@@ -67,7 +63,7 @@ public class InstallExistingPackageTaskTest {
         when(mContext.getPackageManager()).thenReturn(mPackageManager);
 
         mTask = new InstallExistingPackageTask(INSTALL_PACKAGE_NAME, mContext, TEST_PARAMS,
-                mCallback, mock(ProvisioningAnalyticsTracker.class));
+                mCallback);
     }
 
     @Test

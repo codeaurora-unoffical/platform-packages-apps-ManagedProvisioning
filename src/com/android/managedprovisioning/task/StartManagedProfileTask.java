@@ -29,12 +29,8 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 
 import com.android.internal.annotations.VisibleForTesting;
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.R;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.model.ProvisioningParams;
 
 import java.util.concurrent.Semaphore;
@@ -52,10 +48,7 @@ public class StartManagedProfileTask extends AbstractProvisioningTask {
     private final IActivityManager mIActivityManager;
 
     public StartManagedProfileTask(Context context, ProvisioningParams params, Callback callback) {
-        this(ActivityManager.getService(), context, params, callback,
-                new ProvisioningAnalyticsTracker(
-                        MetricsWriterFactory.getMetricsWriter(context, new SettingsFacade()),
-                        new ManagedProvisioningSharedPreferences(context)));
+        this(ActivityManager.getService(), context, params, callback);
     }
 
     @VisibleForTesting
@@ -63,9 +56,8 @@ public class StartManagedProfileTask extends AbstractProvisioningTask {
             IActivityManager iActivityManager,
             Context context,
             ProvisioningParams params,
-            Callback callback,
-            ProvisioningAnalyticsTracker provisioningAnalyticsTracker) {
-        super(context, params, callback, provisioningAnalyticsTracker);
+            Callback callback) {
+        super(context, params, callback);
 
         mIActivityManager = checkNotNull(iActivityManager);
     }

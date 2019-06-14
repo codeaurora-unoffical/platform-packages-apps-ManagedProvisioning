@@ -24,7 +24,6 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -35,7 +34,6 @@ import android.os.UserManager;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
 
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.task.nonrequiredapps.NonRequiredAppsLogic;
 
@@ -68,8 +66,7 @@ public class CreateManagedProfileTaskTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         mTask = new CreateManagedProfileTask(InstrumentationRegistry.getTargetContext(),
-                TEST_PARAMS, mCallback, mUserManager, mLogic,
-                mock(ProvisioningAnalyticsTracker.class));
+                TEST_PARAMS, mCallback, mUserManager, mLogic);
         // GIVEN that a set of system apps should not be installed on the new user
         when(mLogic.getSystemAppsToRemove(TEST_PARENT_USER_ID))
             .thenReturn(new LinkedHashSet<String>(Arrays.asList(SYSTEM_APPS_TO_DELETE)));

@@ -23,7 +23,8 @@ import static android.app.admin.DevicePolicyManager.PROVISIONING_TRIGGER_QR_CODE
 import static android.app.admin.DevicePolicyManager.PROVISIONING_TRIGGER_UNSPECIFIED;
 import static android.nfc.NfcAdapter.ACTION_NDEF_DISCOVERED;
 import static android.stats.devicepolicy.DevicePolicyEnums.PROVISIONING_MANAGED_PROFILE_ON_FULLY_MANAGED_DEVICE;
-
+import static android.stats.devicepolicy.DevicePolicyEnums.PROVISIONING_PREPARE_COMPLETED;
+import static android.stats.devicepolicy.DevicePolicyEnums.PROVISIONING_PREPARE_STARTED;
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_ACTION;
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_CANCELLED;
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_COPY_ACCOUNT_STATUS;
@@ -46,8 +47,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.stats.devicepolicy.DevicePolicyEnums;
-
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.task.AbstractProvisioningTask;
@@ -58,6 +57,9 @@ import java.util.List;
  */
 public class ProvisioningAnalyticsTracker {
 
+    private static final ProvisioningAnalyticsTracker sInstance =
+            new ProvisioningAnalyticsTracker();
+
     private final MetricsLoggerWrapper mMetricsLoggerWrapper = new MetricsLoggerWrapper();
 
     // Only add to the end of the list. Do not change or rearrange these values, that will break
@@ -66,7 +68,6 @@ public class ProvisioningAnalyticsTracker {
     public static final int CANCELLED_BEFORE_PROVISIONING = 1;
     public static final int CANCELLED_DURING_PROVISIONING = 2;
     public static final int CANCELLED_DURING_PROVISIONING_PREPARE = 3;
-    private final ManagedProvisioningSharedPreferences mSharedPreferences;
 
     @IntDef({
         CANCELLED_BEFORE_PROVISIONING,
@@ -92,13 +93,12 @@ public class ProvisioningAnalyticsTracker {
     private static final int PROVISIONING_FLOW_TYPE_ADMIN_INTEGRATED = 1;
     private static final int PROVISIONING_FLOW_TYPE_LEGACY = 2;
 
-    private final MetricsWriter mMetricsWriter;
+    public static ProvisioningAnalyticsTracker getInstance() {
+        return sInstance;
+    }
 
-    public ProvisioningAnalyticsTracker(MetricsWriter metricsWriter,
-            ManagedProvisioningSharedPreferences prefs) {
+    private ProvisioningAnalyticsTracker() {
         // Disables instantiation. Use getInstance() instead.
-        mMetricsWriter = metricsWriter;
-        mSharedPreferences = prefs;
     }
 
     /**
@@ -110,7 +110,9 @@ public class ProvisioningAnalyticsTracker {
     public void logProvisioningStarted(Context context, ProvisioningParams params) {
         logDpcPackageInformation(context, params.inferDeviceAdminPackageName());
         logNetworkType(context);
+        logProvisioningAction(context, params.provisioningAction);
         maybeLogProvisioningFlowType(params);
+        maybeLogManagedProfileOnFullyManagedDevice(context, params.provisioningAction);
     }
 
     /**
@@ -132,10 +134,10 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logCopyAccountStatus(Context context, @CopyAccountStatus int status) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_COPY_ACCOUNT_STATUS, status);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_COPY_ACCOUNT_STATUS)
                 .setInt(status)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -146,10 +148,10 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logProvisioningCancelled(Context context, @CancelState int cancelState) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_CANCELLED, cancelState);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_CANCELLED)
                 .setInt(cancelState)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -163,10 +165,10 @@ public class ProvisioningAnalyticsTracker {
             int errorCode) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_ERROR,
                 AnalyticsUtils.getErrorString(task, errorCode));
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_ERROR)
                 .setStrings(AnalyticsUtils.getErrorString(task, errorCode))
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -177,10 +179,10 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logProvisioningNotAllowed(Context context, int provisioningErrorCode) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_ERROR, provisioningErrorCode);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_ERROR)
                 .setStrings(String.valueOf(provisioningErrorCode))
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -190,9 +192,9 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logProvisioningSessionStarted(Context context) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_SESSION_STARTED);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_SESSION_STARTED)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -202,9 +204,9 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logProvisioningSessionCompleted(Context context) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_SESSION_COMPLETED);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_SESSION_COMPLETED)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -215,9 +217,9 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logNumberOfTermsDisplayed(Context context, int count) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_TERMS_COUNT, count);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_TERMS_COUNT)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -228,10 +230,10 @@ public class ProvisioningAnalyticsTracker {
      */
     public void logNumberOfTermsRead(Context context, int count) {
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_TERMS_READ, count);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_TERMS_READ)
                 .setInt(count)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -240,9 +242,9 @@ public class ProvisioningAnalyticsTracker {
      * admin app.
      */
     public void logProvisioningPrepareStarted() {
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_PREPARE_STARTED)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -251,30 +253,9 @@ public class ProvisioningAnalyticsTracker {
      * admin app.
      */
     public void logProvisioningPrepareCompleted() {
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_PREPARE_COMPLETED)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
-    }
-
-    public void logTimeLoggerEvent(int devicePolicyEvent, int time) {
-        mMetricsWriter.write(DevicePolicyEventLogger
-                .createEvent(devicePolicyEvent)
-                .setInt(time)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
-    }
-
-    /**
-     * Logs the provisioning action.
-     *  @param context Context passed to MetricsLogger
-     * @param provisioningAction Action that triggered provisioning
-     */
-    public void logProvisioningAction(Context context, String provisioningAction) {
-        mMetricsLoggerWrapper.logAction(context, PROVISIONING_ACTION, provisioningAction);
-        mMetricsWriter.write(DevicePolicyEventLogger
-                .createEvent(DevicePolicyEnums.PROVISIONING_ACTION)
-                .setStrings(provisioningAction)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
-        maybeLogManagedProfileOnFullyManagedDevice(context, provisioningAction);
+                .write();
     }
 
     /**
@@ -288,12 +269,12 @@ public class ProvisioningAnalyticsTracker {
             return;
         }
         final boolean isAdminIntegratedFlow = new Utils().isAdminIntegratedFlow(params);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_FLOW_TYPE)
                 .setInt(isAdminIntegratedFlow
                         ? PROVISIONING_FLOW_TYPE_ADMIN_INTEGRATED
                         : PROVISIONING_FLOW_TYPE_LEGACY)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -307,10 +288,10 @@ public class ProvisioningAnalyticsTracker {
         for (String extra : provisioningExtras) {
             mMetricsLoggerWrapper.logAction(context, PROVISIONING_EXTRA, extra);
         }
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_EXTRAS)
                 .setStrings(provisioningExtras.toArray(new String[0]))
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -326,9 +307,9 @@ public class ProvisioningAnalyticsTracker {
         switch (intent.getAction()) {
             case ACTION_NDEF_DISCOVERED:
                 mMetricsLoggerWrapper.logAction(context, PROVISIONING_ENTRY_POINT_NFC);
-                mMetricsWriter.write(DevicePolicyEventLogger
+                DevicePolicyEventLogger
                         .createEvent(DevicePolicyEnums.PROVISIONING_ENTRY_POINT_NFC)
-                        .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                        .write();
                 break;
             case ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE:
                 logProvisionedFromTrustedSource(context, intent);
@@ -343,10 +324,10 @@ public class ProvisioningAnalyticsTracker {
         if (provisioningTrigger == PROVISIONING_TRIGGER_QR_CODE) {
             mMetricsLoggerWrapper.logAction(context, PROVISIONING_ENTRY_POINT_QR_CODE);
         }
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_ENTRY_POINT_TRUSTED_SOURCE)
                 .setInt(provisioningTrigger)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -358,20 +339,20 @@ public class ProvisioningAnalyticsTracker {
     private void logDpcPackageInformation(Context context, String dpcPackageName) {
         // Logs package name of the dpc.
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_DPC_PACKAGE_NAME, dpcPackageName);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_DPC_PACKAGE_NAME)
                 .setStrings(dpcPackageName)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
 
         // Logs package name of the package which installed dpc.
         final String dpcInstallerPackage =
                 AnalyticsUtils.getInstallerPackageName(context, dpcPackageName);
         mMetricsLoggerWrapper.logAction(context, PROVISIONING_DPC_INSTALLED_BY_PACKAGE,
                 dpcInstallerPackage);
-        mMetricsWriter.write(DevicePolicyEventLogger
+        DevicePolicyEventLogger
                 .createEvent(DevicePolicyEnums.PROVISIONING_DPC_INSTALLED_BY_PACKAGE)
                 .setStrings(dpcInstallerPackage)
-                .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                .write();
     }
 
     /**
@@ -384,6 +365,20 @@ public class ProvisioningAnalyticsTracker {
         networkTypeLogger.log();
     }
 
+    /**
+     * Logs the provisioning action.
+     *
+     * @param context Context passed to MetricsLogger
+     * @param provisioningAction Action that triggered provisioning
+     */
+    private void logProvisioningAction(Context context, String provisioningAction) {
+        mMetricsLoggerWrapper.logAction(context, PROVISIONING_ACTION, provisioningAction);
+        DevicePolicyEventLogger
+                .createEvent(DevicePolicyEnums.PROVISIONING_ACTION)
+                .setStrings(provisioningAction)
+                .write();
+    }
+
     private void maybeLogManagedProfileOnFullyManagedDevice(Context context,
             String provisioningAction) {
         final DevicePolicyManager dpm =
@@ -391,9 +386,9 @@ public class ProvisioningAnalyticsTracker {
         final ComponentName currentDeviceOwner = dpm.getDeviceOwnerComponentOnAnyUser();
         if (currentDeviceOwner != null
                 && ACTION_PROVISION_MANAGED_PROFILE.equals(provisioningAction)) {
-            mMetricsWriter.write(DevicePolicyEventLogger
+            DevicePolicyEventLogger
                     .createEvent(PROVISIONING_MANAGED_PROFILE_ON_FULLY_MANAGED_DEVICE)
-                    .setTimePeriod(AnalyticsUtils.getProvisioningTime(mSharedPreferences)));
+                    .write();
         }
     }
 }

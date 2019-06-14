@@ -25,11 +25,7 @@ import android.content.pm.PackageManager;
 
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.managedprovisioning.R;
-import com.android.managedprovisioning.analytics.MetricsWriterFactory;
-import com.android.managedprovisioning.analytics.ProvisioningAnalyticsTracker;
-import com.android.managedprovisioning.common.ManagedProvisioningSharedPreferences;
 import com.android.managedprovisioning.common.ProvisionLogger;
-import com.android.managedprovisioning.common.SettingsFacade;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.task.nonrequiredapps.NonRequiredAppsLogic;
 
@@ -59,25 +55,7 @@ public class DeleteNonRequiredAppsTask extends AbstractProvisioningTask {
                 context,
                 params,
                 callback,
-                new NonRequiredAppsLogic(context, firstTimeCreation, params),
-                new ProvisioningAnalyticsTracker(
-                        MetricsWriterFactory.getMetricsWriter(context, new SettingsFacade()),
-                        new ManagedProvisioningSharedPreferences(context)));
-    }
-
-    @VisibleForTesting
-    public DeleteNonRequiredAppsTask(
-            boolean firstTimeCreation,
-            Context context,
-            ProvisioningParams params,
-            Callback callback,
-            ProvisioningAnalyticsTracker provisioningAnalyticsTracker) {
-        this(
-                context,
-                params,
-                callback,
-                new NonRequiredAppsLogic(context, firstTimeCreation, params),
-                provisioningAnalyticsTracker);
+                new NonRequiredAppsLogic(context, firstTimeCreation, params));
     }
 
     @VisibleForTesting
@@ -85,9 +63,8 @@ public class DeleteNonRequiredAppsTask extends AbstractProvisioningTask {
             Context context,
             ProvisioningParams params,
             Callback callback,
-            NonRequiredAppsLogic logic,
-            ProvisioningAnalyticsTracker provisioningAnalyticsTracker) {
-        super(context, params, callback, provisioningAnalyticsTracker);
+            NonRequiredAppsLogic logic) {
+        super(context, params, callback);
 
         mPm = checkNotNull(context.getPackageManager());
         mLogic = checkNotNull(logic);
