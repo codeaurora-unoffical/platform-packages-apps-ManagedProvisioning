@@ -50,6 +50,7 @@ import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.Tr
 import com.android.managedprovisioning.transition.TransitionActivity;
 import com.google.android.setupdesign.GlifLayout;
 import com.google.android.setupcompat.template.FooterButton;
+import com.google.android.setupcompat.util.WizardManagerHelper;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Collections;
@@ -96,6 +97,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     private RepeatingVectorAnimation mRepeatingVectorAnimation;
     private FooterButton mNextButton;
     private UserProvisioningStateHelper mUserProvisioningStateHelper;
+    private DevicePolicyManager mDevicePolicyManager;
 
     public ProvisioningActivity() {
         super(new Utils());
@@ -115,6 +117,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         if (mUserProvisioningStateHelper == null) {
             mUserProvisioningStateHelper = new UserProvisioningStateHelper(this);
         }
+        mDevicePolicyManager = getSystemService(DevicePolicyManager.class);
     }
 
     @Override
@@ -158,23 +161,17 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         new FinalizationController(getApplicationContext(), mUserProvisioningStateHelper)
                 .provisioningInitiallyDone(mParams);
         if (mUtils.isAdminIntegratedFlow(mParams)) {
-            if (mParams.provisioningAction.equals(ACTION_PROVISION_MANAGED_PROFILE)
-                    && mParams.accountToMigrate != null && !mParams.keepAccountMigrated) {
-                mUtils.removeAccountAsync(this, mParams.accountToMigrate, this::postAccountRemove);
-            } else {
-                postAccountRemove();
-            }
+            enableGlobalFlags();
+            showPolicyComplianceScreen();
         } else {
             finishProvisioning();
         }
     }
 
-    private void postAccountRemove() {
-        enableGlobalFlags();
-        showPolicyComplianceScreen();
-    }
-
     private void enableGlobalFlags() {
+        if (mParams.isCloudEnrollment) {
+            mDevicePolicyManager.setDeviceProvisioningConfigApplied();
+        }
         final SettingsFacade settingsFacade = new SettingsFacade();
         settingsFacade.setUserSetupCompleted(this, UserHandle.USER_SYSTEM);
         settingsFacade.setDeviceProvisioned(this);
@@ -218,6 +215,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
                 if (resultCode == RESULT_OK) {
                     if (shouldShowTransitionScreen()) {
                         Intent intent = new Intent(this, TransitionActivity.class);
+                        WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
                         intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, mParams);
                         startActivityForResult(intent, TRANSITION_ACTIVITY_REQUEST_CODE);
                     } else {
@@ -330,8 +328,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
 
         CustomizationParams customizationParams =
                 CustomizationParams.createInstance(mParams, this, mUtils);
-        initializeLayoutParams(R.layout.provisioning_progress, null,
-                customizationParams.mainColor, customizationParams.statusBarColor);
+        initializeLayoutParams(R.layout.provisioning_progress, null, customizationParams);
         setTitle(titleResId);
 
         final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
