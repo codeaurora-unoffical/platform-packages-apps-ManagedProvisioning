@@ -561,9 +561,7 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
                             && mUtils.isPackageDeviceOwner(dpm, inferStaticDeviceAdminPackageName(
                                     deviceAdminComponentName, deviceAdminPackageName));
 
-            final boolean skipEducationScreens = getBooleanExtraFromLongName(intent,
-                    EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS,
-                    DEFAULT_EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS);
+            final boolean skipEducationScreens = shouldSkipEducationScreens(intent);
 
             // Only when provisioning PO with ACTION_PROVISION_MANAGED_PROFILE
             final boolean keepAccountMigrated = isManagedProfileAction
@@ -643,6 +641,28 @@ public class ExtrasProvisioningDataParser implements ProvisioningDataParser {
         } catch (NullPointerException e) {
             throw new IllegalProvisioningArgumentException("Compulsory parameter not found!", e);
         }
+    }
+
+    /**
+     * When {@link DevicePolicyManager#EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS} is passed as
+     * a provisioning extra, we only process it for managed Google account enrollment and
+     * persistent device owner.
+     */
+    private boolean shouldSkipEducationScreens(Intent intent) {
+        if (!getBooleanExtraFromLongName(intent,
+                EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS,
+                DEFAULT_EXTRA_PROVISIONING_SKIP_EDUCATION_SCREENS)) {
+            return false;
+        }
+        if (mUtils.isOrganizationOwnedProvisioning(intent)) {
+            return false;
+        }
+        return isFullyManagedDeviceAction(intent);
+    }
+
+    private boolean isFullyManagedDeviceAction(Intent intent) {
+        return ACTION_PROVISION_MANAGED_DEVICE.equals(intent.getAction())
+                || ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE.equals(intent.getAction());
     }
 
     /**
