@@ -16,12 +16,12 @@
 
 package com.android.managedprovisioning.preprovisioning;
 
+import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_FINANCED_DEVICE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_PROFILE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_SHAREABLE_DEVICE;
 import static android.app.admin.DevicePolicyManager.ACTION_PROVISION_MANAGED_USER;
-import static android.app.admin.DevicePolicyManager.CODE_ADD_MANAGED_PROFILE_DISALLOWED;
 import static android.app.admin.DevicePolicyManager.CODE_CANNOT_ADD_MANAGED_PROFILE;
 import static android.app.admin.DevicePolicyManager.CODE_HAS_DEVICE_OWNER;
 import static android.app.admin.DevicePolicyManager.CODE_MANAGED_USERS_NOT_SUPPORTED;
@@ -194,6 +194,8 @@ public class PreProvisioningController {
 
         void prepareAdminIntegratedFlow(ProvisioningParams params);
 
+        void prepareFinancedDeviceFlow(ProvisioningParams params);
+
         void showFactoryResetDialog(Integer titleId, int messageId);
 
         void initiateUi(UiParams uiParams);
@@ -314,6 +316,8 @@ public class PreProvisioningController {
 
         if (mParams.isOrganizationOwnedProvisioning) {
             mUi.prepareAdminIntegratedFlow(mParams);
+        } else if (mUtils.isFinancedDeviceAction(mParams.provisioningAction)) {
+            mUi.prepareFinancedDeviceFlow(mParams);
         } else {
             // skipUserConsent can only be set from a device owner provisioning to a work profile.
             if (mParams.skipUserConsent || Utils.isSilentProvisioning(mContext, mParams)) {
@@ -604,7 +608,8 @@ public class PreProvisioningController {
             return verifyActivityAlias(intent, "PreProvisioningActivityAfterEncryption");
         } else if (ACTION_NDEF_DISCOVERED.equals(intent.getAction())) {
             return verifyActivityAlias(intent, "PreProvisioningActivityViaNfc");
-        } else if (ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE.equals(intent.getAction())) {
+        } else if (ACTION_PROVISION_MANAGED_DEVICE_FROM_TRUSTED_SOURCE.equals(intent.getAction())
+                || ACTION_PROVISION_FINANCED_DEVICE.equals(intent.getAction())) {
             return verifyActivityAlias(intent, "PreProvisioningActivityViaTrustedApp");
         } else {
             return verifyCaller(callingPackage);
@@ -810,7 +815,6 @@ public class PreProvisioningController {
         ProvisionLogger.logw("DevicePolicyManager.checkProvisioningPreCondition returns code: "
                 + provisioningPreCondition);
         switch (provisioningPreCondition) {
-            case CODE_ADD_MANAGED_PROFILE_DISALLOWED:
             case CODE_MANAGED_USERS_NOT_SUPPORTED:
                 mUi.showErrorAndClose(R.string.cant_add_work_profile,
                         R.string.work_profile_cant_be_added_contact_admin,
