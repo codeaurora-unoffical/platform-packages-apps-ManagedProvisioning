@@ -38,6 +38,7 @@ import com.android.managedprovisioning.common.AccessibilityContextMenuMaker;
 import com.android.managedprovisioning.common.ClickableSpanFactory;
 import com.android.managedprovisioning.common.ProvisionLogger;
 import com.android.managedprovisioning.common.RepeatingVectorAnimation;
+import com.android.managedprovisioning.common.StartDpcInsideSuwServiceConnection;
 import com.android.managedprovisioning.common.Utils;
 import com.android.managedprovisioning.common.PolicyComplianceUtils;
 import com.android.managedprovisioning.finalization.PreFinalizationController;
@@ -46,6 +47,7 @@ import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.AnimationComponents;
 import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.TransitionAnimationCallback;
+import com.android.managedprovisioning.provisioning.crossprofile.CrossProfileConsentActivity;
 import com.android.managedprovisioning.transition.TransitionActivity;
 import com.google.android.setupdesign.GlifLayout;
 import com.google.android.setupcompat.template.FooterButton;
@@ -68,6 +70,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         implements TransitionAnimationCallback {
     private static final int POLICY_COMPLIANCE_REQUEST_CODE = 1;
     private static final int TRANSITION_ACTIVITY_REQUEST_CODE = 2;
+    private static final int CROSS_PROFILE_PACKAGES_CONSENT_REQUEST_CODE = 3;
     private static final int RESULT_CODE_ADD_PERSONAL_ACCOUNT = 120;
     private static final int RESULT_CODE_COMPLETE_DEVICE_FINANCE = 121;
 
@@ -98,11 +101,14 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
                         R.string.fully_managed_device_provisioning_progress_label);
             }});
 
+    private static final String START_DPC_SERVICE_STATE_KEY = "start_dpc_service_state";
+
     private TransitionAnimationHelper mTransitionAnimationHelper;
     private RepeatingVectorAnimation mRepeatingVectorAnimation;
     private FooterButton mNextButton;
     private UserProvisioningStateHelper mUserProvisioningStateHelper;
     private PolicyComplianceUtils mPolicyComplianceUtils;
+    private StartDpcInsideSuwServiceConnection mStartDpcInsideSuwServiceConnection;
 
     public ProvisioningActivity() {
         super(new Utils());
@@ -122,9 +128,41 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        if (savedInstanceState != null) {
+            final Bundle startDpcServiceState =
+                    savedInstanceState.getBundle(START_DPC_SERVICE_STATE_KEY);
+
+            if (startDpcServiceState != null) {
+                mStartDpcInsideSuwServiceConnection = new StartDpcInsideSuwServiceConnection(
+                        this, startDpcServiceState, getDpcIntentSender());
+            }
+        }
+
         if (mUserProvisioningStateHelper == null) {
             mUserProvisioningStateHelper = new UserProvisioningStateHelper(this);
         }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        if (mStartDpcInsideSuwServiceConnection != null) {
+            final Bundle startDpcServiceState = new Bundle();
+            mStartDpcInsideSuwServiceConnection.saveInstanceState(startDpcServiceState);
+            outState.putBundle(START_DPC_SERVICE_STATE_KEY, startDpcServiceState);
+        }
+    }
+
+    @Override
+    public final void onDestroy() {
+        if (mStartDpcInsideSuwServiceConnection != null) {
+            mStartDpcInsideSuwServiceConnection.unbind(this);
+            mStartDpcInsideSuwServiceConnection = null;
+        }
+
+        super.onDestroy();
     }
 
     @Override
@@ -165,17 +203,22 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     }
 
     private void onNextButtonClicked() {
-        new PreFinalizationController(this, mUserProvisioningStateHelper)
-                .deviceManagementEstablished(mParams);
-        if (mUtils.isAdminIntegratedFlow(mParams)) {
-            mPolicyComplianceUtils.startPolicyComplianceActivityForResultIfResolved(
-                    this, mParams, null, POLICY_COMPLIANCE_REQUEST_CODE, mUtils);
+        if (getProvisioningMode() == PROVISIONING_MODE_WORK_PROFILE) {
+            Intent intent = new Intent(this, CrossProfileConsentActivity.class);
+            WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
+            intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, mParams);
+            startActivityForResult(intent, CROSS_PROFILE_PACKAGES_CONSENT_REQUEST_CODE);
         } else {
-            finishProvisioning();
+            markDeviceManagementEstablishedAndGoToNextStep();
         }
+
     }
 
-    private void finishProvisioning() {
+    private Runnable getDpcIntentSender() {
+        return () -> mPolicyComplianceUtils.startPolicyComplianceActivityForResultIfResolved(
+                this, mParams, null, POLICY_COMPLIANCE_REQUEST_CODE, mUtils);
+    }
+    private void finishActivity() {
         if (mParams.provisioningAction.equals(ACTION_PROVISION_FINANCED_DEVICE)) {
             setResult(RESULT_CODE_COMPLETE_DEVICE_FINANCE);
         } else {
@@ -195,6 +238,12 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case POLICY_COMPLIANCE_REQUEST_CODE:
+                if (mStartDpcInsideSuwServiceConnection != null) {
+                    mStartDpcInsideSuwServiceConnection.dpcFinished();
+                    mStartDpcInsideSuwServiceConnection.unbind(this);
+                    mStartDpcInsideSuwServiceConnection = null;
+                }
+
                 if (resultCode == RESULT_OK) {
                     if (shouldShowTransitionScreen()) {
                         Intent intent = new Intent(this, TransitionActivity.class);
@@ -217,6 +266,27 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
                 setResult(RESULT_CODE_ADD_PERSONAL_ACCOUNT);
                 finish();
                 break;
+            case CROSS_PROFILE_PACKAGES_CONSENT_REQUEST_CODE:
+                if (resultCode == RESULT_OK) {
+                    markDeviceManagementEstablishedAndGoToNextStep();
+                }
+                break;
+        }
+    }
+
+    private void markDeviceManagementEstablishedAndGoToNextStep(){
+        new PreFinalizationController(this, mUserProvisioningStateHelper)
+                .deviceManagementEstablished(mParams);
+
+        if (mUtils.isAdminIntegratedFlow(mParams)) {
+            if (mStartDpcInsideSuwServiceConnection == null) {
+                // Connect to a SUW service to disable network intent interception before starting
+                // the DPC.
+                mStartDpcInsideSuwServiceConnection = new StartDpcInsideSuwServiceConnection();
+            }
+            mStartDpcInsideSuwServiceConnection.triggerDpcStart(this, getDpcIntentSender());
+        } else {
+            finishActivity();
         }
     }
 
