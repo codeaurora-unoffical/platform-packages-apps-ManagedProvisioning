@@ -16,10 +16,9 @@
 package com.android.managedprovisioning.provisioning;
 
 import static com.android.internal.util.Preconditions.checkNotNull;
-import static com.android.managedprovisioning.provisioning.ProvisioningActivity.PROVISIONING_MODE_FINANCED_DEVICE;
 import static com.android.managedprovisioning.provisioning.ProvisioningActivity.PROVISIONING_MODE_FULLY_MANAGED_DEVICE;
 import static com.android.managedprovisioning.provisioning.ProvisioningActivity.PROVISIONING_MODE_WORK_PROFILE;
-import static com.android.managedprovisioning.provisioning.ProvisioningActivity.PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE;
+import static com.android.managedprovisioning.provisioning.ProvisioningActivity.PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE;
 
 import android.annotation.DrawableRes;
 import android.annotation.StringRes;
@@ -71,14 +70,16 @@ class TransitionAnimationHelper {
                 /* showContactAdmin */ true)
     }, R.string.fully_managed_device_provisioning_summary);
 
-    // TODO: b/147399319, update string for financed device use case
-    // TODO: b/147812990, update animation for financed device use case
-    static final ProvisioningModeWrapper FINANCED_DEVICE_WRAPPER
+    @VisibleForTesting
+    static final ProvisioningModeWrapper WORK_PROFILE_ON_ORG_OWNED_DEVICE_WRAPPER
             = new ProvisioningModeWrapper(new TransitionScreenWrapper[] {
-                    new TransitionScreenWrapper(
-                            R.string.just_a_sec,
-                            R.drawable.connect_on_the_go_animation)
-    }, R.string.fully_managed_device_provisioning_summary);
+        new TransitionScreenWrapper(R.string.cope_provisioning_step_1_header,
+                R.drawable.separate_work_and_personal_animation),
+        new TransitionScreenWrapper(R.string.cope_provisioning_step_2_header,
+                R.drawable.pause_work_apps_animation),
+        new TransitionScreenWrapper(R.string.cope_provisioning_step_3_header,
+                R.drawable.not_private_animation)
+    }, R.string.cope_provisioning_summary);
 
     private static final int TRANSITION_TIME_MILLIS = 5000;
     private static final int CROSSFADE_ANIMATION_DURATION_MILLIS = 500;
@@ -221,8 +222,8 @@ class TransitionAnimationHelper {
                 return WORK_PROFILE_WRAPPER;
             case PROVISIONING_MODE_FULLY_MANAGED_DEVICE:
                 return FULLY_MANAGED_DEVICE_WRAPPER;
-            case PROVISIONING_MODE_FINANCED_DEVICE:
-                return FINANCED_DEVICE_WRAPPER;
+            case PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE:
+                return WORK_PROFILE_ON_ORG_OWNED_DEVICE_WRAPPER;
         }
         throw new IllegalStateException("Unexpected provisioning mode " + provisioningMode);
     }

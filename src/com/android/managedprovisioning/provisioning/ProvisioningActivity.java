@@ -31,6 +31,7 @@ import android.graphics.drawable.AnimatedVectorDrawable;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 import androidx.annotation.VisibleForTesting;
 import com.android.managedprovisioning.R;
@@ -82,12 +83,14 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     static final int PROVISIONING_MODE_FULLY_MANAGED_DEVICE = 2;
     static final int PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE = 3;
     static final int PROVISIONING_MODE_FINANCED_DEVICE = 4;
+    static final int PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE = 5;
 
     @IntDef(prefix = { "PROVISIONING_MODE_" }, value = {
         PROVISIONING_MODE_WORK_PROFILE,
         PROVISIONING_MODE_FULLY_MANAGED_DEVICE,
         PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE,
-        PROVISIONING_MODE_FINANCED_DEVICE
+        PROVISIONING_MODE_FINANCED_DEVICE,
+        PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE
     })
     @Retention(RetentionPolicy.SOURCE)
     @interface ProvisioningMode {}
@@ -100,9 +103,9 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
                         R.string.fully_managed_device_provisioning_progress_label);
                 put(PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE,
                         R.string.fully_managed_device_provisioning_progress_label);
-                put(PROVISIONING_MODE_FINANCED_DEVICE,
-                        // TODO: b/147399319 update string showing provisioning progress
-                        R.string.fully_managed_device_provisioning_progress_label);
+                put(PROVISIONING_MODE_FINANCED_DEVICE, R.string.just_a_sec);
+                put(PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE,
+                        R.string.work_profile_provisioning_progress_label);
             }});
 
     private static final String START_DPC_SERVICE_STATE_KEY = "start_dpc_service_state";
@@ -207,7 +210,9 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     }
 
     private void onNextButtonClicked() {
-        if (getProvisioningMode() == PROVISIONING_MODE_WORK_PROFILE) {
+        int provisioningMode = getProvisioningMode();
+        if (provisioningMode == PROVISIONING_MODE_WORK_PROFILE
+                || provisioningMode == PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE) {
             Intent intent = new Intent(this, CrossProfileConsentActivity.class);
             WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
             intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, mParams);
@@ -386,7 +391,6 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     @Override
     protected void initializeUi(ProvisioningParams params) {
         final boolean isPoProvisioning = mUtils.isProfileOwnerAction(params.provisioningAction);
-        // TODO: b/147399319, accessibility description string for financed device provisioning
         final int titleResId =
             isPoProvisioning ? R.string.setup_profile_progress : R.string.setup_device_progress;
 
@@ -398,7 +402,8 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         final GlifLayout layout = findViewById(R.id.setup_wizard_layout);
         setupEducationViews(layout);
         if (mUtils.isFinancedDeviceAction(params.provisioningAction)) {
-            layout.setIcon(null);
+            // make the icon invisible
+            layout.findViewById(R.id.sud_layout_icon).setVisibility(View.INVISIBLE);
         }
         mNextButton = Utils.addNextButton(layout, v -> onNextButtonClicked());
         mNextButton.setVisibility(View.INVISIBLE);
@@ -443,6 +448,8 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         if (isProfileOwnerAction) {
             if (getSystemService(DevicePolicyManager.class).isDeviceManaged()) {
                 provisioningMode = PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE;
+            } else if (mParams.isOrganizationOwnedProvisioning) {
+                provisioningMode = PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE;
             } else {
                 provisioningMode = PROVISIONING_MODE_WORK_PROFILE;
             }
@@ -483,7 +490,15 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         if (animation.getVisibility() == View.INVISIBLE) {
             return;
         }
-        animation.setImageResource(R.drawable.enterprise_wp_animation);
+        if (mUtils.isFinancedDeviceAction(mParams.provisioningAction)) {
+            // the default scale type is CENTER_CROP, but the progress bar animation is too large to
+            // fit into the ImageView
+            animation.setScaleType(ScaleType.CENTER_INSIDE);
+            animation.setImageResource(R.drawable.sud_fourcolor_progress_bar);
+        } else {
+            animation.setImageResource(R.drawable.enterprise_wp_animation);
+        }
+
         final AnimatedVectorDrawable vectorDrawable =
             (AnimatedVectorDrawable) animation.getDrawable();
         mRepeatingVectorAnimation = new RepeatingVectorAnimation(vectorDrawable);
@@ -500,7 +515,8 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
 
     private boolean shouldSkipEducationScreens() {
         return mParams.skipEducationScreens
-                || getProvisioningMode() == PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE;
+                || getProvisioningMode() == PROVISIONING_MODE_WORK_PROFILE_ON_FULLY_MANAGED_DEVICE
+                || getProvisioningMode() == PROVISIONING_MODE_FINANCED_DEVICE;
     }
 
     private ProvisioningAnalyticsTracker getProvisioningAnalyticsTracker() {
