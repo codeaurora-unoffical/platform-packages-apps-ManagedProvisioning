@@ -132,7 +132,7 @@
     <string name="copying_certs" msgid="5697938664953550881">"Configuration des certificats CA en cours…"</string>
     <string name="setup_profile" msgid="5573950582159698549">"Configurer votre profil"</string>
     <string name="profile_benefits_description" msgid="758432985984252636">"En utilisant un profil professionnel, vous pouvez séparer vos données professionnelles de vos données personnelles"</string>
-    <string name="comp_profile_benefits_description" msgid="379837075456998273">"En utilisant un profil professionnel, vous pouvez garder vos applications de bureau en un seul endroit"</string>
+    <string name="comp_profile_benefits_description" msgid="379837075456998273">"En utilisant un profil professionnel, vous pouvez garder vos applications de travail en un seul endroit"</string>
     <string name="setup_profile_encryption" msgid="5241291404536277038">"Configurer votre profil. Chiffrement."</string>
     <string name="setup_profile_progress" msgid="7742718527853325656">"Configurer votre profil. Affichage de la progression."</string>
     <string name="setup_device" msgid="6725265673245816366">"Configurer l\'appareil"</string>
@@ -163,7 +163,8 @@
     <string name="setup_provisioning_header" msgid="4282483198266806271">"Préparation de l\'appareil professionnel en cours…"</string>
     <string name="setup_provisioning_header_description" msgid="2567041263563823566">"Configuration de l\'application d\'administration en cours…"</string>
     <string name="set_up_everything_else" msgid="4407706086957916501">"Configurez tout le reste"</string>
-    <string name="now_lets_set_up_everything_else" msgid="2905102208584231894">"Configurons maintenant tout le reste"</string>
+    <string name="now_lets_set_up_everything_else" msgid="5829716209795747105">"Ajouter un compte personnel pour profiter davantage de votre appareil"</string>
+    <string name="now_lets_set_up_everything_else_explanation" msgid="2730458857511288697">"Maintenant que votre profil professionnel est prêt, vous pouvez aussi ajouter un compte Google personnel afin d\'accéder à vos applications et à leur contenu."</string>
     <string name="brand_screen_header" msgid="8865808542690116648">"Cet appareil appartient à votre organisation"</string>
     <string name="brand_screen_subheader" msgid="7664792208784456436">"L\'application suivante sera utilisée pour gérer et surveiller ce téléphone"</string>
     <string name="downloading_administrator_header" msgid="8660294318893902915">"Préparation pour la configuration du profil professionnel en cours…"</string>
