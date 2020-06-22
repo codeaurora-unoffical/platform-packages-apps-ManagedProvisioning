@@ -360,8 +360,6 @@
   <string name="downloading_administrator_header">Getting ready for work setup\u2026</string>
 
   <!-- Work profile setup screens -->
-  <!-- Screen title. This is letting the user know that they'll first set up their work profile before setting up the rest of their device. [CHAR LIMIT=NONE]-->
-  <string name="work_profile_provisioning_accept_header">First, let\'s set up your work profile</string>
   <!-- Screen title in the new phone setup flow. This text is letting the user know that they're about to set up a work profile on their new phone. [CHAR LIMIT=NONE]-->
   <string name="work_profile_provisioning_accept_header_post_suw">Let\'s set up your work profile</string>
   <!-- Screen title. This is letting the user know what the work profile is for, and that they can find all of their work apps in this profile. [CHAR LIMIT=NONE]-->
@@ -390,18 +388,18 @@
   <string name="fully_managed_device_provisioning_summary">Use this device to easily access your work apps. This device isn\'t private, so your IT admin may be able to see your data and activity. To learn more, contact your IT admin.</string>
 
   <!-- Work profile on organization-owned device setup screens -->
-  <!-- Screen title. This screen lets the user know that their work apps are kept in the work profile, and the work apps are managed by the user's IT admin. [CHAR LIMIT=NONE]-->
+  <!-- Screen title. This screen lets the user know that their work apps are kept in the work profile, and the work apps are managed by the user's IT admin. [CHAR LIMIT=90]-->
   <string name="cope_provisioning_step_1_header">Work apps are kept in your work profile &amp; managed by your IT admin</string>
-  <!-- Screen title. This screen lets the user know that their personal apps are separate and hidden from their work apps. [CHAR LIMIT=NONE]-->
+  <!-- Screen title. This screen lets the user know that their personal apps are separate and hidden from their work apps. [CHAR LIMIT=90]-->
   <string name="cope_provisioning_step_2_header">Personal apps are separate &amp; hidden from work apps</string>
-  <!-- Screen title. This is letting the user know that the IT admin can control this device and block certain apps. [CHAR LIMIT=NONE]-->
+  <!-- Screen title. This is letting the user know that the IT admin can control this device and block certain apps. [CHAR LIMIT=90]-->
   <string name="cope_provisioning_step_3_header">Your IT admin can control this device &amp; block certain apps</string>
   <!-- Spoken text for screen readers. This is summarizing the key features of the work profile while it's being set up. [CHAR LIMIT=NONE]-->
   <string name="cope_provisioning_summary">Work apps are kept in your work profile and managed by your IT admin. Personal apps are separate and hidden from work apps. Your IT admin can control this device and block certain apps.</string>
 
   <!-- Financed device setup screens -->
-  <!-- Screen title. This is displayed when a device admin app is set as the device owner. [CHAR LIMIT=NONE]-->
-  <string name="just_a_sec" translatable="false">Just a sec\u2026</string>
+  <!-- Screen title. This is displayed when a user needs to wait for a moment during the device setup process. [CHAR LIMIT=NONE]-->
+  <string name="just_a_sec">Just a sec\u2026</string>
 
   <!-- Fully managed device privacy notification -->
   <!-- Notification title. This text is letting the user know about a privacy reminder before they start using their new work device. [CHAR LIMIT=NONE]-->
@@ -415,24 +413,12 @@
   <string name="done">Done</string>
 
   <!-- Financed device provisioning landing screen -->
-  <!-- Screen title. This is letting the user know that this device is provided by a creditor. This means the creditor can control the device, such as locking it if the user doesn't make payments. [CHAR LIMIT=NONE]-->
-  <string name="financed_device_screen_header" translatable="false">This device is provided by <xliff:g id="creditor_name" example="creditor_name">%1$s</xliff:g></string>
-  <!-- Creditor capabilities header. This is letting the user know that the creditor may have some capabilities to control the device. [CHAR LIMIT=NONE]-->
-  <string name="creditor_capabilities_header" translatable="false"><xliff:g id="creditor_name" example="creditor_name">%1$s</xliff:g> can:</string>
-  <!-- Creditor capabilities content. This is letting the user know that the creditor can install the creditor app. [CHAR LIMIT=NONE]-->
-  <string name="install_creditor_app_description" translatable="false">Install the <xliff:g id="creditor_name" example="creditor_name">%1$s</xliff:g> app on this device</string>
-  <!-- Creditor capabilities content. This is letting the user know that the creditor is able to lock the device. [CHAR LIMIT=NONE]-->
-  <string name="lock_device_description" translatable="false">Lock this device if you don\'t make payments</string>
-
-  <!-- Title of a full-screen message. This screen lets users connect certain apps in their work and personal profiles so they can access work and personal data together. [CHAR LIMIT=NONE]-->
-  <string name="cross_profile_consent_title">Connect work &amp; personal apps</string>
-  <!-- Subtext on a screen. This text lets users know what will happen if they turn on the toggles next to the apps on this screen. Each app's toggle will let the user access both work and personal data. [CHAR LIMIT=NONE]-->
-  <string name="cross_profile_consent_summary">Connected apps let you access work and personal data together. You can make changes anytime in Settings.</string>
-
-  <!-- Notification title. This notification lets users connect certain apps in their work and personal profiles so they can access work and personal data together. -->
-  <string name="cross_profile_notification_title">Connect work &amp; personal apps</string>
-  <!-- Text in a notification. This notification lets users connect certain apps in their work and personal profiles so they can access work and personal data together. -->
-  <string name="cross_profile_notification_text">Access work and personal data together. Tap to set up.</string>
-  <!-- Notification channel name. This channel lets users connect certain apps in their work and personal profiles so they can access work and personal data together. -->
-  <string name="cross_profile_notification_channel_name">Connect work &amp; personal apps</string>
+  <!-- Screen title in the device setup process. This is reminding the user that this device is provided by a creditor. This means the creditor can control the device, such as locking it if the user doesn't make payments. [CHAR LIMIT=NONE]-->
+  <string name="financed_device_screen_header">This device was purchased on credit from <xliff:g id="creditor_name" example="creditor_name">%1$s</xliff:g></string>
+  <!-- Part of a device setup screen. This screen lets the user know that their device was purchased from a creditor, and the creditor can control parts of the device, such as locking it if the user doesn't make payments. [CHAR LIMIT=NONE]-->
+  <string name="creditor_capabilities_header"><xliff:g id="creditor_name" example="creditor_name">%1$s</xliff:g> can:</string>
+  <!-- Part of a device setup screen. This screen lets the user know that their device was purchased from a creditor, and the creditor can control parts of the device, such as installing their app so the user can make payments. [CHAR LIMIT=NONE]-->
+  <string name="install_creditor_app_description">Install the <xliff:g id="creditor_name" example="creditor_name">%1$s</xliff:g> app so you can make payments for this device</string>
+  <!-- Part of a device setup screen. This screen lets the user know that their device was purchased from a creditor, and the creditor can control parts of the device, such as restricting access if the user doesn't make payments. [CHAR LIMIT=NONE]-->
+  <string name="lock_device_description">Restrict access to this device if you don\'t make payments</string>
 </resources>
