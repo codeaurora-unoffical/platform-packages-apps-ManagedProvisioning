@@ -52,7 +52,6 @@ import com.android.managedprovisioning.model.CustomizationParams;
 import com.android.managedprovisioning.model.ProvisioningParams;
 import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.AnimationComponents;
 import com.android.managedprovisioning.provisioning.TransitionAnimationHelper.TransitionAnimationCallback;
-import com.android.managedprovisioning.provisioning.crossprofile.CrossProfileConsentActivity;
 import com.android.managedprovisioning.transition.TransitionActivity;
 import com.google.android.setupdesign.GlifLayout;
 import com.google.android.setupcompat.template.FooterButton;
@@ -210,17 +209,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
     }
 
     private void onNextButtonClicked() {
-        int provisioningMode = getProvisioningMode();
-        if (provisioningMode == PROVISIONING_MODE_WORK_PROFILE
-                || provisioningMode == PROVISIONING_MODE_WORK_PROFILE_ON_ORG_OWNED_DEVICE) {
-            Intent intent = new Intent(this, CrossProfileConsentActivity.class);
-            WizardManagerHelper.copyWizardManagerExtras(getIntent(), intent);
-            intent.putExtra(ProvisioningParams.EXTRA_PROVISIONING_PARAMS, mParams);
-            startActivityForResult(intent, CROSS_PROFILE_PACKAGES_CONSENT_REQUEST_CODE);
-        } else {
-            markDeviceManagementEstablishedAndGoToNextStep();
-        }
-
+        markDeviceManagementEstablishedAndGoToNextStep();
     }
 
     private Runnable getDpcIntentSender() {
@@ -287,7 +276,7 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
         }
     }
 
-    private void markDeviceManagementEstablishedAndGoToNextStep(){
+    private void markDeviceManagementEstablishedAndGoToNextStep() {
         new PreFinalizationController(this, mUserProvisioningStateHelper)
                 .deviceManagementEstablished(mParams);
 
@@ -297,6 +286,9 @@ public class ProvisioningActivity extends AbstractProvisioningActivity
                 // the DPC.
                 mStartDpcInsideSuwServiceConnection = new StartDpcInsideSuwServiceConnection();
             }
+            // Prevent the UI from flashing on the screen while the service connection starts the
+            // DPC (b/149463287).
+            findViewById(R.id.setup_wizard_layout).setVisibility(View.INVISIBLE);
             mStartDpcInsideSuwServiceConnection.triggerDpcStart(this, getDpcIntentSender());
         } else {
             finishActivity();

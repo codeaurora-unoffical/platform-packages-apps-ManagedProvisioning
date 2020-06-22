@@ -47,6 +47,7 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.drawable.VectorDrawable;
+import android.net.ConnectivityManager;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.service.persistentdata.PersistentDataBlockManager;
@@ -169,6 +170,7 @@ public class PreProvisioningControllerTest extends AndroidTestCase {
         when(mSettingsFacade.isDuringSetupWizard(mContext)).thenReturn(false);
         mController = new PreProvisioningController(mContext, mUi, mTimeLogger, mMessageParser,
                 mUtils, mSettingsFacade, mEncryptionController, mSharedPreferences);
+        when(mSettingsFacade.isDeveloperMode(mContext)).thenReturn(true);
     }
 
     public void testManagedProfile() throws Exception {
@@ -669,8 +671,9 @@ public class PreProvisioningControllerTest extends AndroidTestCase {
         verify(mUi, never()).requestWifiPick();
     }
 
-    public void testInitiateProvisioning_connectedToWifi_noWifiPicker() {
-        when(mUtils.isConnectedToWifi(mContext)).thenReturn(true);
+    public void testInitiateProvisioning_connectedToWifiOrEthernet_noWifiPicker() {
+        when(mUtils.isNetworkTypeConnected(mContext, ConnectivityManager.TYPE_WIFI,
+                ConnectivityManager.TYPE_ETHERNET)).thenReturn(true);
         final ProvisioningParams params = createProvisioningParamsBuilderForInitiateProvisioning()
                 .build();
         initiateProvisioning(params);

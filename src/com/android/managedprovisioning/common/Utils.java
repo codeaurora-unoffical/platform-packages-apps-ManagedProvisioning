@@ -550,6 +550,13 @@ public class Utils {
         }
     }
 
+    public boolean isQrProvisioning(Intent intent) {
+        return PROVISIONING_TRIGGER_QR_CODE ==
+                intent.getIntExtra(
+                        DevicePolicyManager.EXTRA_PROVISIONING_TRIGGER,
+                        /* defValue= */ PROVISIONING_TRIGGER_UNSPECIFIED);
+    }
+
     /**
      * Returns if the given parameter is for provisioning the admin integrated flow.
      */
@@ -631,13 +638,22 @@ public class Utils {
     }
 
     /**
-     * Returns whether the device is currently connected to a wifi.
+     * Returns whether the device is currently connected to specific network type, such as {@link
+     * ConnectivityManager.TYPE_WIFI} or {@link ConnectivityManager.TYPE_ETHERNET}
+     *
+     * {@see ConnectivityManager}
      */
-    public boolean isConnectedToWifi(Context context) {
-        NetworkInfo info = getActiveNetworkInfo(context);
-        return info != null
-                && info.isConnected()
-                && info.getType() == ConnectivityManager.TYPE_WIFI;
+    public boolean isNetworkTypeConnected(Context context, int... types) {
+        final NetworkInfo networkInfo = getActiveNetworkInfo(context);
+        if (networkInfo != null && networkInfo.isConnected()) {
+            final int activeNetworkType = networkInfo.getType();
+            for (int type : types) {
+                if (activeNetworkType == type) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
